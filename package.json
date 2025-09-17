@@ -1,0 +1,19 @@
+{
+  "name": "chat-irumae",
+  "version": "1.0.0",
+  "description": "��#\u0000 \u0000c\u0000h\u0000a\u0000t\u0000-\u0000i\u0000r\u0000u\u0000m\u0000a\u0000e\u0000\r\u0000 \u0000",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "concurrently --kill-others --prefix-colors \"bgBlue.bold,bgMagenta.bold\" --names \"BACKEND,FRONTEND\" \"cd ./backend/chatirumae && gradlew.bat bootRun\" \"npm run dev --prefix frontend\"",
+    "dev:backend": "cd ./backend/chatirumae && gradlew.bat bootRun",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "dev:debug": "concurrently --kill-others --prefix-colors \"bgBlue.bold,bgMagenta.bold\" --names \"BACKEND,FRONTEND\" --raw \"cd ./backend/chatirumae && gradlew.bat bootRun --info\" \"npm run dev --prefix frontend\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
