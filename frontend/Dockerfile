@@ -25,7 +25,7 @@ RUN npm run build
 FROM nginx:1.23-alpine
 
 # 빌드 단계에서 생성된 빌드 결과물을 Nginx의 기본 html 폴더로 복사합니다.
-COPY --from=builder /app/build /usr/share/nginx/html
+COPY --from=builder /app/dist /usr/share/nginx/html
 
 # 커스텀 Nginx 설정을 복사합니다.
 COPY nginx.conf /etc/nginx/conf.d/default.conf
