@@ -12,7 +12,7 @@ COPY . .
 RUN gradle clean build --no-daemon
 
 # 런타임 이미지: Liberica JDK21 Alpine
-FROM bellsoft/liberica-openjdk-alpine:21
+FROM bellsoft/liberica-openjdk-alpine:17
 WORKDIR /app
 COPY --from=builder /app/build/libs/*.jar app.jar
 EXPOSE 3000
