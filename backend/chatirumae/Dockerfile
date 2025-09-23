@@ -1,5 +1,5 @@
 # 빌드 스테이지: Gradle + JDK21
-FROM gradle:8.10.2-jdk21 AS builder
+FROM gradle:8.10.2-jdk17 AS builder
 WORKDIR /app
 
 # 1) 의존성 캐시용: build.gradle과 wrapper 설정만 복사
