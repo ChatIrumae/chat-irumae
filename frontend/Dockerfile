@@ -2,7 +2,7 @@
 
 # --- 1. 빌드 단계 (Build Stage) ---
 # Node.js 18 버전을 빌드 환경으로 사용합니다.
-FROM node:18-alpine as builder
+FROM node:20-alpine as builder
 
 # 작업 디렉토리를 /app으로 설정합니다.
 WORKDIR /app
