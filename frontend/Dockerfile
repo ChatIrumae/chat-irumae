@@ -31,7 +31,7 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Nginx가 사용하는 80 포트를 외부에 알립니다.
-EXPOSE 80
+EXPOSE 3000
 
 # 컨테이너가 시작될 때 Nginx를 실행합니다.
 CMD ["nginx", "-g", "daemon off;"]

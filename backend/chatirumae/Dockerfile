@@ -15,5 +15,5 @@ RUN gradle clean build --no-daemon
 FROM bellsoft/liberica-openjdk-alpine:17
 WORKDIR /app
 COPY --from=builder /app/build/libs/*-SNAPSHOT.jar app.jar
-EXPOSE 3000
+EXPOSE 3001
 ENTRYPOINT ["java","-jar","app.jar"]
