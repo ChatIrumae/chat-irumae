@@ -32,7 +32,7 @@ jobs:
       - name: Build & Push image
         uses: docker/build-push-action@v5
         with:
-          context: ./backend # <-- backend 디렉토리를 빌드 컨텍스트로 명시
+          context: ./backend/chatirumae # <-- backend 디렉토리를 빌드 컨텍스트로 명시
           push: true
           tags: beming/${{ github.event.repository.name }}:${{ github.sha }}
 
