@@ -41,7 +41,7 @@ jobs:
       - name: Checkout infra repo
         uses: actions/checkout@v4
         with:
-          repository: beming-dev/stock-simulator-cicd
+          repository: ChatIrumae/gitops
           token: ${{ secrets.INFRA_TOKEN }}
           path: infra
 
