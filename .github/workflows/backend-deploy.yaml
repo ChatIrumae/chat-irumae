@@ -34,7 +34,7 @@ jobs:
         with:
           context: ./backend/chatirumae # <-- backend 디렉토리를 빌드 컨텍스트로 명시
           push: true
-          tags: beming/${{ github.event.repository.name }}:${{ github.sha }}
+          tags: beming/chat-irumae-backend:${{ github.sha }}
 
       # 5. GitOps(Infra) 리포지토리 체크아웃
       - name: Checkout infra repo
