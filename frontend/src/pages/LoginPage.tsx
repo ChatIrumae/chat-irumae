@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { authApi, tokenUtils } from "../utils/api";
 import "./LoginPage.css";
 
-interface LoginFormData {
+export interface LoginFormData {
   portalId: string;
   portalPassword: string;
 }

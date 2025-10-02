@@ -55,8 +55,8 @@ export interface ApiResponse<T = any> {
 }
 
 export interface LoginRequest {
-  username: string;
-  password: string;
+  portalId: string;
+  portalPassword: string;
 }
 
 export interface LoginResponse {
@@ -81,7 +81,7 @@ export const authApi = {
   ): Promise<ApiResponse<LoginResponse>> => {
     try {
       const response = await apiClient.post<ApiResponse<LoginResponse>>(
-        "/api/auth/login",
+        "/api/login",
         credentials
       );
       return response.data;
