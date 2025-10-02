@@ -7,6 +7,9 @@ FROM node:20-alpine as builder
 # 작업 디렉토리를 /app으로 설정합니다.
 WORKDIR /app
 
+ARG VITE_API_BASE_URL
+ENV VITE_API_BASE_URL=http://chat-irumae-back.kro.kr
+
 # package.json과 package-lock.json 파일을 복사합니다.
 COPY package.json ./
 COPY package-lock.json ./
