@@ -14,27 +14,18 @@ RUN gradle clean build --no-daemon
 # 런타임 이미지: Liberica JDK21 Alpine
 FROM bellsoft/liberica-openjdk-alpine:17
 WORKDIR /app
-COPY --from=builder /app/build/libs/*-SNAPSHOT.jar app.jar
 
-RUN apt-get update && apt-get install -y \
-    libnss3 \
-    libnspr4 \
-    libdbus-1-3 \
-    libatk1.0-0 \
-    libatk-bridge2.0-0 \
-    libcups2 \
-    libdrm2 \
-    libxkbcommon0 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxfixes3 \
-    libxrandr2 \
-    libgbm1 \
-    libasound2 \
-    libpangocairo-1.0-0 \
-    libx11-xcb1 \
-    libgtk-3-0 \
-    && rm -rf /var/lib/apt/lists/*
-    
+# 💡 [수정 포인트] Alpine의 패키지 매니저(apk)를 사용하여 의존성 설치
+# 루트 권한으로 실행해야 함
+USER root
+RUN apk update && apk add --no-cache \
+    udev \
+    ttf-freefont \
+    chromium
+
+# 보안을 위해 non-root 유저로 다시 전환
+USER bellsoft
+
+COPY --from=builder /app/build/libs/*-SNAPSHOT.jar app.jar
 EXPOSE 3001
 ENTRYPOINT ["java","-jar","app.jar"]
