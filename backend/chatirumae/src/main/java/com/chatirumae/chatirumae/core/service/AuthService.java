@@ -50,9 +50,6 @@ public class AuthService {
 
         // 사용자가 없는 경우 포털 로그인을 시도하여 로그인 정보가 올바른지 확인한다.
         else {
-            System.out.println("hh");
-            System.out.println(portalId);
-            System.out.println(portalPassword);
             UosSession uosSession; // 변수를 try 블록 밖에서도 사용할 수 있도록 미리 선언합니다.
 
             try {
@@ -72,7 +69,6 @@ public class AuthService {
 
             // 만약 로그인 정보가 올바르다면 사용자를 생성하고 세션을 저장한 후 세션 키를 반환한다.
             if (uosSession != null) {
-                System.out.println(22);
                 // 포털에서 사용자 생성에 필요한 정보를 가져온다.
                 UserBasicInfo userInfo = uosPortalApi.getUserBasicInfo(uosSession);
                 String id = UUID.randomUUID().toString();
