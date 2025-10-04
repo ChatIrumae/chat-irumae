@@ -51,6 +51,8 @@ public class AuthService {
         // 사용자가 없는 경우 포털 로그인을 시도하여 로그인 정보가 올바른지 확인한다.
         else {
             System.out.println("hh");
+            System.out.println(portalId);
+            System.out.println(portalPassword);
             UosSession uosSession = uosPortalSessionManager.createUosSession(portalId, portalPassword);
             System.out.println("session created: " + uosSession);
 
