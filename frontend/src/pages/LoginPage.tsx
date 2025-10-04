@@ -35,10 +35,9 @@ const LoginPage: React.FC = () => {
     try {
       const response = await authApi.login(formData);
 
-      console.log(response);
-      if ((response as string).startsWith("\\")) {
+      if (response) {
         // 토큰 저장
-        tokenUtils.setToken(response.data.token);
+        tokenUtils.setToken(response);
 
         // 로그인 성공 처리
         console.log("로그인 성공:", response.data);
