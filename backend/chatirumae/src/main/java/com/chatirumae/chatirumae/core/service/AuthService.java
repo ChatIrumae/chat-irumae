@@ -53,8 +53,22 @@ public class AuthService {
             System.out.println("hh");
             System.out.println(portalId);
             System.out.println(portalPassword);
-            UosSession uosSession = uosPortalSessionManager.createUosSession(portalId, portalPassword);
-            System.out.println("session created: " + uosSession);
+            UosSession uosSession; // 변수를 try 블록 밖에서도 사용할 수 있도록 미리 선언합니다.
+
+            try {
+                // 이 부분에서 발생하는 모든 예외를 잡아서 처리합니다.
+                uosSession = uosPortalSessionManager.createUosSession(portalId, portalPassword);
+                System.out.println("session created: " + uosSession);
+        
+            } catch (Exception e) {
+                // 💡 실패 로그를 자세히 출력합니다.
+                System.err.println("## 포털 세션 생성 중 심각한 오류 발생 ##");
+                e.printStackTrace(); // 예외의 전체 스택 트레이스(원인, 위치)를 출력합니다 (가장 중요!).
+        
+                // 오류가 발생했음을 알리고 흐름을 중단시키기 위해 새로운 예외를 던집니다.
+                // 원래 발생한 예외(e)를 포함시켜 원인을 잃어버리지 않도록 합니다.
+                throw new RuntimeException("포털 세션 생성에 실패했습니다. 로그를 확인하세요.", e);
+            }
 
             // 만약 로그인 정보가 올바르다면 사용자를 생성하고 세션을 저장한 후 세션 키를 반환한다.
             if (uosSession != null) {
