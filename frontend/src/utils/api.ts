@@ -76,9 +76,7 @@ export interface ErrorResponse {
 // API 함수들
 export const authApi = {
   // 로그인
-  login: async (
-    credentials: LoginRequest
-  ): Promise<ApiResponse<LoginResponse>> => {
+  login: async (credentials: LoginRequest): Promise<any> => {
     try {
       const response = await apiClient.post<ApiResponse<LoginResponse>>(
         "/api/login",
@@ -119,6 +117,7 @@ export const authApi = {
 const handleApiError = (error: any): Error => {
   if (axios.isAxiosError(error)) {
     const axiosError = error as AxiosError<ErrorResponse>;
+    console.log(axiosError);
 
     if (axiosError.response) {
       // 서버에서 응답을 받았지만 에러 상태
