@@ -13,7 +13,7 @@ export const config = {
   APP_NAME: "Chat Irumae",
 
   // API 타임아웃 (밀리초)
-  API_TIMEOUT: 10000,
+  API_TIMEOUT: 100000,
 
   // 토큰 키
   TOKEN_KEY: "authToken",
