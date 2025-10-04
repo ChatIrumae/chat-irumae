@@ -82,7 +82,7 @@ const LoginPage: React.FC = () => {
           <div className="form-group">
             <label htmlFor="portalPassword">비밀번호</label>
             <input
-              type="portalPassword"
+              type="password"
               id="portalPassword"
               name="portalPassword"
               value={formData.portalPassword}

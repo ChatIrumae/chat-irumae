@@ -5,6 +5,7 @@ import {
   Navigate,
 } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
+import DashboardPage from "./pages/DashboardPage";
 import "./App.css";
 
 function App() {
@@ -14,7 +15,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<LoginPage />} />
-          {/* TODO: 다른 라우트들 추가 */}
+          <Route path="/dashboard" element={<DashboardPage />} />
         </Routes>
       </div>
     </Router>

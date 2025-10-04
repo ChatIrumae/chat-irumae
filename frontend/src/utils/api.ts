@@ -73,6 +73,14 @@ export interface ErrorResponse {
   code?: string;
 }
 
+export interface ChatRequest {
+  message: string;
+}
+
+export interface ChatResponse {
+  response: string;
+}
+
 // API 함수들
 export const authApi = {
   // 로그인
@@ -106,6 +114,21 @@ export const authApi = {
       const response = await apiClient.get<ApiResponse<{ valid: boolean }>>(
         "/api/auth/verify"
       );
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+};
+
+// 채팅 API
+export const chatApi = {
+  // 채팅 메시지 전송
+  sendMessage: async (message: string): Promise<string> => {
+    try {
+      const response = await apiClient.post<string>("/api/chat", {
+        message: message,
+      });
       return response.data;
     } catch (error) {
       throw handleApiError(error);
