@@ -70,7 +70,7 @@ public class ChatService {
             
             // VectorStore 검색 실패 시 또는 결과가 없을 때 컨텍스트 없이 GPT API 호출
             try {
-                return gptApi.generateResponse(userMessage, null).block();
+                return "테스트";
             } catch (Exception gptError) {
                 System.err.println("GPT API 호출 중 오류 발생: " + gptError.getMessage());
                 gptError.printStackTrace();
