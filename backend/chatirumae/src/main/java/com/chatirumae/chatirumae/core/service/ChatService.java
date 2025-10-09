@@ -7,9 +7,7 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class ChatService {
@@ -33,16 +31,9 @@ public class ChatService {
             try {
                 System.out.println("=== VectorStore 검색 시작 ===");
                 System.out.println("VectorStore에서 유사한 문서를 검색합니다...");
-                System.out.println("VectorStore 타입: " + vectorStore.getClass().getSimpleName());
                 System.out.println("사용자 메시지: " + userMessage);
                 System.out.println("사용자 메시지 길이: " + userMessage.length());
-                
-                // VectorStore가 null인지 확인
-                if (vectorStore == null) {
-                    System.err.println("VectorStore가 null입니다. ChromaDB 설정을 확인해주세요.");
-                    return "VectorStore가 초기화되지 않았습니다. 관리자에게 문의해주세요.";
-                }
-                
+
                 // Embedding 테스트를 위한 간단한 검색
                 System.out.println("Embedding을 통한 유사도 검색을 시작합니다...");
                 List<Document> similarDocuments = vectorStore.similaritySearch(userMessage);
@@ -53,9 +44,8 @@ public class ChatService {
                     // 각 문서의 내용(content)만 추출하여 하나의 문자열로 합칩니다.
                     String context = similarDocuments.stream().toString();
 
-                    System.out.println("Context for GPT: " + context);
-
                     // 컨텍스트와 함께 GPT API 호출
+//                    return gptApi.generateResponse(userMessage, List.of(context)).block();
                     return "테스트";
                 } else {
                     System.out.println("유사한 문서를 찾지 못했습니다. 컨텍스트 없이 GPT API를 호출합니다.");
