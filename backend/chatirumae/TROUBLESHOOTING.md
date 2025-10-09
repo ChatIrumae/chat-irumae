@@ -91,3 +91,4 @@ spring.ai.vectorstore.chroma.initialize-schema=true
 2. ChromaDB 서버가 실행 중인지 확인
 3. OpenAI API 키가 유효한지 확인
 4. 네트워크 연결 상태 확인
+
