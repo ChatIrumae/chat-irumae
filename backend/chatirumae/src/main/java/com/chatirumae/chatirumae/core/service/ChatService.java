@@ -31,8 +31,10 @@ public class ChatService {
             
             // VectorStore 검색 시도
             try {
+                System.out.println("=== VectorStore 검색 시작 ===");
                 System.out.println("VectorStore에서 유사한 문서를 검색합니다...");
                 System.out.println("VectorStore 타입: " + vectorStore.getClass().getSimpleName());
+                System.out.println("사용자 메시지: " + userMessage);
                 System.out.println("사용자 메시지 길이: " + userMessage.length());
                 
                 // VectorStore가 null인지 확인
@@ -49,14 +51,12 @@ public class ChatService {
                     System.out.println("검색된 문서 수: " + similarDocuments.size());
                     
                     // 각 문서의 내용(content)만 추출하여 하나의 문자열로 합칩니다.
-                    String context = similarDocuments.stream()
-                            .map(Document::getContent)
-                            .collect(Collectors.joining("\n---\n"));
-                    
+                    String context = similarDocuments.stream().toString();
+
                     System.out.println("Context for GPT: " + context);
 
                     // 컨텍스트와 함께 GPT API 호출
-                    return gptApi.generateResponse(userMessage, List.of(Collections.singletonList(context))).block();
+                    return "테스트";
                 } else {
                     System.out.println("유사한 문서를 찾지 못했습니다. 컨텍스트 없이 GPT API를 호출합니다.");
                 }

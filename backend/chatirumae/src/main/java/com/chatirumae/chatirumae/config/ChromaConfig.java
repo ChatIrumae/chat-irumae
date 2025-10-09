@@ -16,7 +16,11 @@ public class ChromaConfig {
     
     @Bean
     public WebClient chromaWebClient() {
-        System.out.println("ChromaDB 연결 설정: " + chromaUrl);
+        System.out.println("=== ChromaDB 설정 정보 ===");
+        System.out.println("ChromaDB URL: " + chromaUrl);
+        System.out.println("Collection Name: " + collectionName);
+        System.out.println("=========================");
+        
         return WebClient.builder()
                 .baseUrl(chromaUrl)
                 .build();

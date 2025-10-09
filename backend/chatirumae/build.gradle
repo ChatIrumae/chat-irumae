@@ -18,7 +18,7 @@ java {
 dependencyManagement {
 	imports {
 		// 이 한 줄이 모든 spring-ai-* 모듈의 버전을 통일시켜 줍니다.
-		mavenBom "org.springframework.ai:spring-ai-bom:0.8.1" // 안정화된 버전 사용
+		mavenBom "org.springframework.ai:spring-ai-bom:1.0.0-M5" // 안정화된 버전 사용
 	}
 }
 
@@ -39,7 +39,7 @@ dependencies {
 
 	// 2. Spring AI (BOM 덕분에 버전 명시 불필요)
 	implementation('org.springframework.ai:spring-ai-openai-spring-boot-starter')
-	implementation('org.springframework.ai:spring-ai-chroma-store')
+	implementation("org.springframework.ai:spring-ai-chroma-store-spring-boot-starter")
 	implementation('org.apache.httpcomponents.client5:httpclient5:5.2.1')
 	// 3. MongoDB (스타터로 교체)
 	implementation("org.springframework.boot:spring-boot-starter-data-mongodb")
