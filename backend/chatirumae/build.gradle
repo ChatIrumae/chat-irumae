@@ -1,7 +1,7 @@
 plugins {
 	id 'java'
-	id 'org.springframework.boot' version '3.5.5'
-	id 'io.spring.dependency-management' version '1.1.7'
+	id 'org.springframework.boot' version '3.3.5' // Spring Boot 3.3.x 버전대 사용 권장
+	id 'io.spring.dependency-management' version '1.1.5'
 }
 
 group = 'com.chatirumae'
@@ -14,19 +14,43 @@ java {
 	}
 }
 
+// Spring AI의 버전 관리를 위한 BOM(Bill of Materials) 설정
+dependencyManagement {
+	imports {
+		// 이 한 줄이 모든 spring-ai-* 모듈의 버전을 통일시켜 줍니다.
+		mavenBom "org.springframework.ai:spring-ai-bom:0.8.0" // 안정화된 버전 사용
+	}
+}
+
 repositories {
 	mavenCentral()
+	maven { url 'https://repo.spring.io/milestone' }
+	maven { url 'https://repo.spring.io/snapshot' }
+	maven {
+		name = 'Central Portal Snapshots'
+		url = 'https://central.sonatype.com/repository/maven-snapshots/'
+	}
 }
 
 dependencies {
-	implementation("org.mongodb:mongodb-driver-core:5.2.1")
-	implementation("org.mongodb:mongodb-driver-sync:5.2.1")
-	implementation("org.springframework.boot:spring-boot-starter")
+	// 1. 웹 스타터 (Web과 WebFlux 중 하나만 선택)
 	implementation("org.springframework.boot:spring-boot-starter-web")
-	implementation ('org.springframework.boot:spring-boot-starter-webflux')
+	// implementation("org.springframework.boot:spring-boot-starter-webflux") // WebFlux를 쓴다면 위 web을 주석처리
+
+	// 2. Spring AI (BOM 덕분에 버전 명시 불필요)
+	implementation('org.springframework.ai:spring-ai-openai-spring-boot-starter')
+	implementation('org.springframework.ai:spring-ai-chroma-store')
+
+
+	// 3. MongoDB (스타터로 교체)
+	implementation("org.springframework.boot:spring-boot-starter-data-mongodb")
+
+	// 기타 필요한 의존성
 	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.1.0")
 	implementation("com.microsoft.playwright:playwright:1.40.0")
 	implementation("org.json:json:20210307")
+
+	// 테스트 의존성
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }

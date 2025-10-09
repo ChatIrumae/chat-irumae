@@ -1,5 +1,7 @@
 package com.chatirumae.chatirumae.infra;
 
+import java.util.List;
+
 public final class ChromaDtos {
     // 문서 추가 요청 DTO
     public record AddRequest(
@@ -20,5 +22,9 @@ public final class ChromaDtos {
             java.util.List<java.util.List<Float>> distances,
             java.util.List<java.util.List<String>> documents,
             java.util.List<java.util.List<java.util.Map<String, String>>> metadatas
-    ) {}
+    ) {
+        public List<List<String>> getDocuments() {
+            return documents;
+        }
+    }
 }
