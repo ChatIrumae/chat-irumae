@@ -41,7 +41,6 @@ dependencies {
 	implementation('org.springframework.ai:spring-ai-openai-spring-boot-starter')
 	implementation('org.springframework.ai:spring-ai-chroma-store')
 	implementation('org.apache.httpcomponents.client5:httpclient5:5.2.1')
-
 	// 3. MongoDB (스타터로 교체)
 	implementation("org.springframework.boot:spring-boot-starter-data-mongodb")
 

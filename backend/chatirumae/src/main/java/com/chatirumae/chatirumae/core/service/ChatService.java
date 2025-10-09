@@ -35,6 +35,12 @@ public class ChatService {
                 System.out.println("VectorStore 타입: " + vectorStore.getClass().getSimpleName());
                 System.out.println("사용자 메시지 길이: " + userMessage.length());
                 
+                // VectorStore가 null인지 확인
+                if (vectorStore == null) {
+                    System.err.println("VectorStore가 null입니다. ChromaDB 설정을 확인해주세요.");
+                    return "VectorStore가 초기화되지 않았습니다. 관리자에게 문의해주세요.";
+                }
+                
                 List<Document> similarDocuments = vectorStore.similaritySearch(userMessage);
                 
                 if (similarDocuments != null && !similarDocuments.isEmpty()) {
@@ -61,8 +67,13 @@ public class ChatService {
             }
             
             // VectorStore 검색 실패 시 또는 결과가 없을 때 컨텍스트 없이 GPT API 호출
-//            return gptApi.generateResponse(userMessage, null).block();
-            return "test중";
+            try {
+                return gptApi.generateResponse(userMessage, null).block();
+            } catch (Exception gptError) {
+                System.err.println("GPT API 호출 중 오류 발생: " + gptError.getMessage());
+                gptError.printStackTrace();
+                return "죄송합니다. AI 서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.";
+            }
             
         } catch (Exception e) {
             System.err.println("Error in ChatService.getResponse: " + e.getMessage());

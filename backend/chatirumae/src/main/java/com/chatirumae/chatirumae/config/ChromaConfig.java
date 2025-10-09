@@ -21,4 +21,7 @@ public class ChromaConfig {
                 .baseUrl(chromaUrl)
                 .build();
     }
+    
+    // VectorStore는 Spring AI의 자동 설정에 의해 자동으로 생성됩니다
+    // application.properties의 설정을 통해 ChromaVectorStore가 자동으로 구성됩니다
 }

@@ -23,6 +23,9 @@ public class OpenAiConfig {
             apiKey.equals("your-api-key-here") || 
             apiKey.equals("sk-your-actual-api-key-here") ||
             !apiKey.startsWith("sk-")) {
+            System.err.println("OpenAI API key가 올바르게 설정되지 않았습니다.");
+            System.err.println("환경변수 OPENAI_API_KEY를 설정하거나 application.properties에서 올바른 API 키를 설정해주세요.");
+            System.err.println("현재 API Key: " + (apiKey != null ? apiKey : "null"));
             throw new IllegalArgumentException("OpenAI API key is not properly configured. Please set OPENAI_API_KEY environment variable with a valid API key starting with 'sk-'.");
         }
         

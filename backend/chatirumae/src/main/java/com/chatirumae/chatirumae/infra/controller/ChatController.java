@@ -2,6 +2,8 @@ package com.chatirumae.chatirumae.infra.controller;
 
 
 import com.chatirumae.chatirumae.core.service.ChatService;
+import com.chatirumae.chatirumae.core.service.HealthCheckService;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -11,9 +13,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api")
 public class ChatController {
     private final ChatService chatService;
+    private final HealthCheckService healthCheckService;
 
-    public ChatController(final ChatService chatService) {
+    public ChatController(final ChatService chatService, final HealthCheckService healthCheckService) {
         this.chatService = chatService;
+        this.healthCheckService = healthCheckService;
     }
 
     @PostMapping("/chat")
@@ -26,6 +30,11 @@ public class ChatController {
         String responseMessage = chatService.getResponse(userMessage);
 
         return responseMessage; // 실제 응답 반환
+    }
+    
+    @GetMapping("/health")
+    public String health() {
+        return healthCheckService.getSystemStatus();
     }
 }
 
