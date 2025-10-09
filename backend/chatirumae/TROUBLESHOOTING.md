@@ -83,7 +83,14 @@ spring.ai.vectorstore.chroma.initialize-schema=true
 2. ChromaDB 서버 상태 확인
 3. `gradlew bootRun` 실행
 4. `http://localhost:3001/api/health`로 상태 확인
-5. `http://localhost:3001/api/chat`로 채팅 테스트
+5. `http://localhost:3001/api/embedding-info`로 embedding 설정 확인
+6. `http://localhost:3001/api/test-embedding?text=안녕하세요`로 embedding 테스트
+7. `http://localhost:3001/api/chat`로 채팅 테스트
+
+### Embedding 테스트 엔드포인트
+
+- `/api/embedding-info`: EmbeddingClient 및 VectorStore 정보 확인
+- `/api/test-embedding?text=테스트텍스트`: Embedding 기능 테스트
 
 ### 문제가 지속되는 경우
 
@@ -91,4 +98,3 @@ spring.ai.vectorstore.chroma.initialize-schema=true
 2. ChromaDB 서버가 실행 중인지 확인
 3. OpenAI API 키가 유효한지 확인
 4. 네트워크 연결 상태 확인
-

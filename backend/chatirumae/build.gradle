@@ -18,7 +18,7 @@ java {
 dependencyManagement {
 	imports {
 		// 이 한 줄이 모든 spring-ai-* 모듈의 버전을 통일시켜 줍니다.
-		mavenBom "org.springframework.ai:spring-ai-bom:0.8.0" // 안정화된 버전 사용
+		mavenBom "org.springframework.ai:spring-ai-bom:0.8.1" // 안정화된 버전 사용
 	}
 }
 

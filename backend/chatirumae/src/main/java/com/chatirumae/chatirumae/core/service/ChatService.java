@@ -41,6 +41,8 @@ public class ChatService {
                     return "VectorStore가 초기화되지 않았습니다. 관리자에게 문의해주세요.";
                 }
                 
+                // Embedding 테스트를 위한 간단한 검색
+                System.out.println("Embedding을 통한 유사도 검색을 시작합니다...");
                 List<Document> similarDocuments = vectorStore.similaritySearch(userMessage);
                 
                 if (similarDocuments != null && !similarDocuments.isEmpty()) {
@@ -68,7 +70,7 @@ public class ChatService {
             
             // VectorStore 검색 실패 시 또는 결과가 없을 때 컨텍스트 없이 GPT API 호출
             try {
-                return "테스트 중";
+                return gptApi.generateResponse(userMessage, null).block();
             } catch (Exception gptError) {
                 System.err.println("GPT API 호출 중 오류 발생: " + gptError.getMessage());
                 gptError.printStackTrace();

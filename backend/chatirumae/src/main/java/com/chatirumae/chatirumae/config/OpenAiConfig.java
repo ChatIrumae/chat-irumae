@@ -1,5 +1,8 @@
 package com.chatirumae.chatirumae.config;
 
+import org.springframework.ai.embedding.EmbeddingClient;
+import org.springframework.ai.openai.OpenAiEmbeddingClient;
+import org.springframework.ai.openai.api.OpenAiApi;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -36,5 +39,26 @@ public class OpenAiConfig {
                 .defaultHeader("Authorization", "Bearer " + apiKey)
                 .defaultHeader("Content-Type", "application/json")
                 .build();
+    }
+
+    @Bean
+    public EmbeddingClient embeddingClient() {
+        System.out.println("OpenAI EmbeddingClient 설정 중...");
+
+        try {
+            // OpenAI API 클라이언트 생성
+            OpenAiApi openAiApi = new OpenAiApi(apiUrl, apiKey);
+
+            // EmbeddingClient 생성
+            OpenAiEmbeddingClient embeddingClient = new OpenAiEmbeddingClient(openAiApi);
+
+            System.out.println("OpenAI EmbeddingClient가 성공적으로 생성되었습니다.");
+            return embeddingClient;
+
+        } catch (Exception e) {
+            System.err.println("EmbeddingClient 생성 중 오류 발생: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("EmbeddingClient 초기화 실패", e);
+        }
     }
 }
