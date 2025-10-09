@@ -1,10 +1,24 @@
 package com.chatirumae.chatirumae.config;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.reactive.function.client.WebClient;
 
 @Configuration
 public class ChromaConfig {
-    // Spring AI 자동 설정을 사용합니다.
-    // application.properties의 설정으로 자동으로 Bean이 생성됩니다.
-    // ChromaDB v2 API를 사용하도록 설정되어 있습니다.
+    
+    @Value("${spring.ai.vectorstore.chroma.url}")
+    private String chromaUrl;
+    
+    @Value("${spring.ai.vectorstore.chroma.collection-name}")
+    private String collectionName;
+    
+    @Bean
+    public WebClient chromaWebClient() {
+        System.out.println("ChromaDB 연결 설정: " + chromaUrl);
+        return WebClient.builder()
+                .baseUrl(chromaUrl)
+                .build();
+    }
 }

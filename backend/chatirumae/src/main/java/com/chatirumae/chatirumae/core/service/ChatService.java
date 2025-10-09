@@ -26,25 +26,48 @@ public class ChatService {
     }
 
     public String getResponse(String userMessage) {
-        // 1. 유사한 문서를 검색합니다.
-        List<Document> similarDocuments = vectorStore.similaritySearch(userMessage);
+        try {
+            System.out.println("사용자 메시지: " + userMessage);
+            
+            // VectorStore 검색 시도
+            try {
+                System.out.println("VectorStore에서 유사한 문서를 검색합니다...");
+                System.out.println("VectorStore 타입: " + vectorStore.getClass().getSimpleName());
+                System.out.println("사용자 메시지 길이: " + userMessage.length());
+                
+                List<Document> similarDocuments = vectorStore.similaritySearch(userMessage);
+                
+                if (similarDocuments != null && !similarDocuments.isEmpty()) {
+                    System.out.println("검색된 문서 수: " + similarDocuments.size());
+                    
+                    // 각 문서의 내용(content)만 추출하여 하나의 문자열로 합칩니다.
+                    String context = similarDocuments.stream()
+                            .map(Document::getContent)
+                            .collect(Collectors.joining("\n---\n"));
+                    
+                    System.out.println("Context for GPT: " + context);
 
-        // 2. 검색된 문서가 있는지 확인합니다.
-        if (similarDocuments != null && !similarDocuments.isEmpty()) {
-            // ⭐️ [수정된 부분] ⭐️
-            // 각 문서의 내용(content)만 추출하여 하나의 문자열로 합칩니다.
-            String context = similarDocuments.stream()
-                    .map(Document::getContent) // 각 Document에서 getContent() 메서드로 내용만 가져옴
-                    .collect(Collectors.joining("\n---\n")); // 각 문서 내용을 줄바꿈으로 구분하여 합침
-
-            System.out.println("Context for GPT: " + context);
-
-            // 3. 추출한 순수 텍스트(context)를 컨텍스트로 사용하여 GPT API를 호출합니다.
-            // gptApi.generateResponse의 두 번째 인자 형식을 확인하여 List.of(context) 등으로 맞추세요.
-            return gptApi.generateResponse(userMessage, List.of(Collections.singletonList(context))).block();
-        } else {
-            // 4. 유사한 문서를 찾지 못한 경우 컨텍스트 없이 GPT API를 호출합니다.
+                    return "테스트중";
+                    // 컨텍스트와 함께 GPT API 호출
+//                    return gptApi.generateResponse(userMessage, List.of(Collections.singletonList(context))).block();
+                } else {
+                    System.out.println("유사한 문서를 찾지 못했습니다. 컨텍스트 없이 GPT API를 호출합니다.");
+                }
+            } catch (Exception vectorStoreError) {
+                System.err.println("VectorStore 검색 중 오류 발생: " + vectorStoreError.getMessage());
+                System.err.println("오류 타입: " + vectorStoreError.getClass().getSimpleName());
+                System.err.println("오류 상세: " + vectorStoreError.getCause());
+                vectorStoreError.printStackTrace();
+                System.out.println("VectorStore 오류를 무시하고 직접 GPT API를 호출합니다.");
+            }
+            
+            // VectorStore 검색 실패 시 또는 결과가 없을 때 컨텍스트 없이 GPT API 호출
             return gptApi.generateResponse(userMessage, null).block();
+            
+        } catch (Exception e) {
+            System.err.println("Error in ChatService.getResponse: " + e.getMessage());
+            e.printStackTrace();
+            return "죄송합니다. 현재 서비스에 문제가 발생했습니다. 잠시 후 다시 시도해주세요.";
         }
     }
 }
