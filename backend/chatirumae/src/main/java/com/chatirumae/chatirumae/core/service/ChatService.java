@@ -47,9 +47,8 @@ public class ChatService {
                     
                     System.out.println("Context for GPT: " + context);
 
-                    return "테스트중";
                     // 컨텍스트와 함께 GPT API 호출
-//                    return gptApi.generateResponse(userMessage, List.of(Collections.singletonList(context))).block();
+                    return gptApi.generateResponse(userMessage, List.of(Collections.singletonList(context))).block();
                 } else {
                     System.out.println("유사한 문서를 찾지 못했습니다. 컨텍스트 없이 GPT API를 호출합니다.");
                 }
@@ -62,7 +61,8 @@ public class ChatService {
             }
             
             // VectorStore 검색 실패 시 또는 결과가 없을 때 컨텍스트 없이 GPT API 호출
-            return gptApi.generateResponse(userMessage, null).block();
+//            return gptApi.generateResponse(userMessage, null).block();
+            return "test중";
             
         } catch (Exception e) {
             System.err.println("Error in ChatService.getResponse: " + e.getMessage());
