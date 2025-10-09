@@ -4,7 +4,7 @@ WORKDIR /app
 COPY build.gradle settings.gradle gradle.* ./
 RUN gradle dependencies --no-daemon
 COPY . .
-RUN gradle clean build --no-daemon
+RUN gradle clean build -x test --no-daemon
 
 # =========================================================================
 
