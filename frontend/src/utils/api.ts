@@ -79,6 +79,20 @@ export interface ChatResponse {
   response: string;
 }
 
+export interface ChatHistorySummary {
+  _id: string;
+  title: string;
+}
+
+export interface ChatHistory {
+  id: string;
+  title: string;
+  messages: Message[];
+  createdAt: string;
+  updatedAt: string;
+  userId: string;
+}
+
 // API 함수들
 export const authApi = {
   // 로그인
@@ -125,6 +139,33 @@ export const chatApi = {
   sendMessage: async (message: Message): Promise<string> => {
     try {
       const response = await apiClient.post<string>("/api/chat", message);
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  // 채팅 히스토리 요약 조회
+  getHistory: async (userId: string): Promise<ChatHistorySummary[]> => {
+    try {
+      const response = await apiClient.get<ChatHistorySummary[]>(
+        `/api/history/${userId}`
+      );
+      return response.data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  },
+
+  // 특정 채팅 히스토리 상세 조회
+  getChatHistory: async (
+    userId: string,
+    chatId: string
+  ): Promise<ChatHistory> => {
+    try {
+      const response = await apiClient.get<ChatHistory>(
+        `/api/history/${userId}/${chatId}`
+      );
       return response.data;
     } catch (error) {
       throw handleApiError(error);

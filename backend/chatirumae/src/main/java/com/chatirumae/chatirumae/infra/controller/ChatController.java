@@ -1,15 +1,18 @@
 package com.chatirumae.chatirumae.infra.controller;
 
-
+import com.chatirumae.chatirumae.core.model.ChatHistory;
+import com.chatirumae.chatirumae.core.model.ChatHistorySummary;
 import com.chatirumae.chatirumae.core.service.ChatService;
 import com.chatirumae.chatirumae.core.service.HealthCheckService;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Date;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api")
@@ -31,16 +34,28 @@ public class ChatController {
         String sender = requestDto.getSender();
 
         System.out.println("사용자 메시지: " + userMessage);
+        System.out.println("발신자: " + sender);
 
         // 주입받은 ChatService를 사용하여 비즈니스 로직 처리
+        // sender를 userId로 사용
         String responseMessage = chatService.getResponse(userMessage, timestamp, currentChatId, sender);
 
         return responseMessage; // 실제 응답 반환
     }
-    
+
     @GetMapping("/health")
     public String health() {
         return healthCheckService.getSystemStatus();
+    }
+
+    @GetMapping("/history/{userId}")
+    public List<ChatHistorySummary> getHistory(@PathVariable String userId) {
+        return chatService.getHistory(userId);
+    }
+
+    @GetMapping("/history/{userId}/{chatId}")
+    public ChatHistory getChatHistory(@PathVariable String userId, @PathVariable String chatId) {
+        return chatService.getChatHistory(chatId, userId);
     }
 }
 

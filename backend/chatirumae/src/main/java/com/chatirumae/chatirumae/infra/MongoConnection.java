@@ -14,7 +14,7 @@ public class MongoConnection {
 
     public MongoConnection() {
         String connectionString = "mongodb+srv://chat-irumae:u63rzo9SrJwInbzj@chat-irumae.xczfrhu.mongodb.net/";
-        String databaseName = "uos-easy-life";
+        String databaseName = "chat-irumae";
 
         MongoClient mongoClient = MongoClients.create(connectionString);
         database = mongoClient.getDatabase(databaseName);

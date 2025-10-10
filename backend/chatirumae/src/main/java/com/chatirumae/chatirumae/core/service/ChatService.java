@@ -1,6 +1,8 @@
 package com.chatirumae.chatirumae.core.service;
 
 import com.chatirumae.chatirumae.core.interfaces.GptApi;
+import com.chatirumae.chatirumae.core.model.ChatHistory;
+import com.chatirumae.chatirumae.core.model.ChatHistorySummary;
 import com.chatirumae.chatirumae.infra.ChatGptApi;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -13,15 +15,44 @@ import java.util.List;
 @Service
 public class ChatService {
     private final VectorStore vectorStore;
-    private GptApi gptApi;
+    private final GptApi gptApi;
+    private final ChatHistoryService chatHistoryService;
 
     @Value("${chromadb.collection.name}")
     private String collectionName;
 
-
-    public ChatService(VectorStore vectorStore, ChatGptApi gptApi) {
+    public ChatService(VectorStore vectorStore, ChatGptApi gptApi, ChatHistoryService chatHistoryService) {
         this.vectorStore = vectorStore;
         this.gptApi = gptApi;
+        this.chatHistoryService = chatHistoryService;
+    }
+
+    public List<ChatHistorySummary> getHistory(String userId) {
+        try {
+            System.out.println("사용자 히스토리 조회: " + userId);
+            List<ChatHistory> chatHistories = chatHistoryService.getChatHistoriesByUserId(userId);
+            
+            // ChatHistory를 ChatHistorySummary로 변환
+            return chatHistories.stream()
+                .map(chat -> new ChatHistorySummary(chat.getId(), chat.getTitle()))
+                .toList();
+        } catch (Exception e) {
+            System.err.println("히스토리 조회 중 오류 발생: " + e.getMessage());
+            e.printStackTrace();
+            return List.of(); // 빈 리스트 반환
+        }
+    }
+
+    public ChatHistory getChatHistory(String chatId, String userId) {
+        try {
+            System.out.println("채팅 히스토리 상세 조회: " + chatId + ", 사용자: " + userId);
+            return chatHistoryService.getChatHistoryById(chatId, userId)
+                .orElseThrow(() -> new IllegalArgumentException("채팅 히스토리를 찾을 수 없습니다: " + chatId));
+        } catch (Exception e) {
+            System.err.println("채팅 히스토리 조회 중 오류 발생: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     public String getResponse(String userMessage, Date date, String currentChatId, String sender) {
@@ -30,6 +61,10 @@ public class ChatService {
             System.out.println("사용자 메시지: " + date);
             System.out.println("사용자 메시지: " + currentChatId);
             System.out.println("사용자 메시지: " + sender);
+
+            // 사용자 메시지를 ChatHistory에 추가 (없으면 새로 생성)
+            // sender를 userId로 사용
+            chatHistoryService.addMessageToChatHistory(currentChatId, sender, userMessage, sender);
 
             // VectorStore 검색 시도
             try {
@@ -46,11 +81,16 @@ public class ChatService {
                     System.out.println("검색된 문서 수: " + similarDocuments.size());
                     
                     // 각 문서의 내용(content)만 추출하여 하나의 문자열로 합칩니다.
-                    String context = similarDocuments.stream().toString();
+                    // String context = similarDocuments.stream().toString();
 
                     // 컨텍스트와 함께 GPT API 호출
-//                    return gptApi.generateResponse(userMessage, List.of(context)).block();
-                    return "테스트";
+//                    String response = gptApi.generateResponse(userMessage, List.of(context)).block();
+                    String response = "테스트";
+                    
+                    // AI 응답 메시지를 ChatHistory에 추가
+                    chatHistoryService.addMessageToChatHistory(currentChatId, sender, response, "assistant");
+                    
+                    return response;
                 } else {
                     System.out.println("유사한 문서를 찾지 못했습니다. 컨텍스트 없이 GPT API를 호출합니다.");
                 }
@@ -64,11 +104,21 @@ public class ChatService {
             
             // VectorStore 검색 실패 시 또는 결과가 없을 때 컨텍스트 없이 GPT API 호출
             try {
-                return "테스트";
+                String response = "테스트";
+                
+                // AI 응답 메시지를 ChatHistory에 추가
+                chatHistoryService.addMessageToChatHistory(currentChatId, sender, response, "assistant");
+                
+                return response;
             } catch (Exception gptError) {
                 System.err.println("GPT API 호출 중 오류 발생: " + gptError.getMessage());
                 gptError.printStackTrace();
-                return "죄송합니다. AI 서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.";
+                String errorResponse = "죄송합니다. AI 서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.";
+                
+                // 에러 메시지도 ChatHistory에 추가
+                chatHistoryService.addMessageToChatHistory(currentChatId, sender, errorResponse, "assistant");
+                
+                return errorResponse;
             }
             
         } catch (Exception e) {
