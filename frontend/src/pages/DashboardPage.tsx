@@ -1,14 +1,15 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { tokenUtils, chatApi } from "../utils/api";
+import HamburgerMenu from "../components/HamburgerMenu";
 import "./DashboardPage.css";
 
 export interface Message {
   id: string;
   content: string;
-  sender: "user" | "assistant";
+  sender: string;
   timestamp: Date;
-  currentChatId: string | null;
+  currentChatId?: string | null;
 }
 
 export interface ChatHistory {
@@ -28,6 +29,18 @@ const DashboardPage: React.FC = () => {
   const [chatHistories, setChatHistories] = useState<ChatHistory[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // UUID 생성 함수
+  const generateChatId = (): string => {
+    return (
+      "chat_" +
+      Date.now() +
+      "_" +
+      Math.random().toString(36).substr(2, 9) +
+      "_" +
+      Math.random().toString(36).substr(2, 9)
+    );
+  };
 
   // 컴포넌트 마운트 시 인증 확인 및 채팅 히스토리 로드
   useEffect(() => {
@@ -64,7 +77,8 @@ const DashboardPage: React.FC = () => {
   // 새 채팅 시작
   const startNewChat = () => {
     setMessages([]);
-    setCurrentChatId(null);
+    const newChatId = generateChatId();
+    setCurrentChatId(newChatId);
     setIsMenuOpen(false);
   };
 
@@ -103,7 +117,7 @@ const DashboardPage: React.FC = () => {
     const userMessage: Message = {
       id: Date.now().toString(),
       content: inputMessage.trim(),
-      sender: "user",
+      sender: tokenUtils.getStudentId()?.toString() || "user",
       timestamp: new Date(),
       currentChatId: currentChatId,
     };
@@ -153,7 +167,7 @@ const DashboardPage: React.FC = () => {
   // 채팅을 히스토리에 저장
   const saveChatToHistory = (messages: Message[], firstMessage: string) => {
     const now = new Date();
-    const chatId = currentChatId || Date.now().toString();
+    const chatId = currentChatId || generateChatId();
 
     const chatTitle =
       firstMessage.length > 30
@@ -186,7 +200,7 @@ const DashboardPage: React.FC = () => {
   };
 
   const handleLogout = () => {
-    tokenUtils.removeToken();
+    tokenUtils.logout();
     navigate("/login");
   };
 
@@ -199,76 +213,16 @@ const DashboardPage: React.FC = () => {
 
   return (
     <div className="dashboard-container">
-      {/* 햄버거 메뉴 오버레이 */}
-      {isMenuOpen && (
-        <div className="menu-overlay" onClick={() => setIsMenuOpen(false)} />
-      )}
-
-      {/* 사이드바 메뉴 */}
-      <div className={`sidebar ${isMenuOpen ? "open" : ""}`}>
-        <div className="sidebar-header">
-          <button onClick={startNewChat} className="new-chat-button">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M12 5V19M5 12H19"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            새 채팅
-          </button>
-        </div>
-
-        <div className="chat-history">
-          <h3>채팅 히스토리</h3>
-          {chatHistories.length === 0 ? (
-            <p className="no-history">아직 채팅 기록이 없습니다.</p>
-          ) : (
-            <div className="history-list">
-              {chatHistories.map((chat) => (
-                <div
-                  key={chat.id}
-                  className={`history-item ${
-                    currentChatId === chat.id ? "active" : ""
-                  }`}
-                >
-                  <div
-                    className="history-content"
-                    onClick={() => loadChat(chat.id)}
-                  >
-                    <div className="history-title">{chat.title}</div>
-                    <div className="history-date">
-                      {chat.updatedAt.toLocaleDateString("ko-KR", {
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </div>
-                  </div>
-                  <button
-                    className="delete-button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteChat(chat.id);
-                    }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                      <path
-                        d="M18 6L6 18M6 6L18 18"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+      {/* 햄버거 메뉴 */}
+      <HamburgerMenu
+        isOpen={isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
+        onNewChat={startNewChat}
+        onLoadChat={loadChat}
+        onDeleteChat={deleteChat}
+        chatHistories={chatHistories}
+        currentChatId={currentChatId}
+      />
 
       {/* 헤더 */}
       <header className="dashboard-header">
@@ -288,6 +242,14 @@ const DashboardPage: React.FC = () => {
             </svg>
           </button>
           <h1>Chat Irumae</h1>
+          {/* <div className="user-info">
+            <span className="user-name">
+              {tokenUtils.getUserName() || "사용자"}
+            </span>
+            <span className="user-id">
+              ({tokenUtils.getStudentId() || "학번"})
+            </span>
+          </div> */}
           <button onClick={handleLogout} className="logout-button">
             로그아웃
           </button>
@@ -304,7 +266,12 @@ const DashboardPage: React.FC = () => {
             </div>
           ) : (
             messages.map((message) => (
-              <div key={message.id} className={`message ${message.sender}`}>
+              <div
+                key={message.id}
+                className={`message ${
+                  message.sender === "assistant" ? "assistant" : "user"
+                }`}
+              >
                 <div className="message-content">
                   <div className="message-text">{message.content}</div>
                   <div className="message-time">

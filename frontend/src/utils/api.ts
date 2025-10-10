@@ -62,11 +62,8 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   token: string;
-  user: {
-    id: string;
-    username: string;
-    email?: string;
-  };
+  studentId: string;
+  name: string;
 }
 
 export interface ErrorResponse {
@@ -85,9 +82,9 @@ export interface ChatResponse {
 // API 함수들
 export const authApi = {
   // 로그인
-  login: async (credentials: LoginRequest): Promise<any> => {
+  login: async (credentials: LoginRequest): Promise<LoginResponse> => {
     try {
-      const response = await apiClient.post<ApiResponse<LoginResponse>>(
+      const response = await apiClient.post<LoginResponse>(
         "/api/login",
         credentials
       );
@@ -173,6 +170,33 @@ export const tokenUtils = {
 
   isAuthenticated: (): boolean => {
     return !!localStorage.getItem(config.TOKEN_KEY);
+  },
+
+  // 사용자 정보 저장
+  setUserInfo: (studentId: string, name: string): void => {
+    localStorage.setItem("studentId", studentId);
+    localStorage.setItem("userName", name);
+  },
+
+  // 사용자 정보 가져오기
+  getStudentId: (): string | null => {
+    return localStorage.getItem("studentId");
+  },
+
+  getUserName: (): string | null => {
+    return localStorage.getItem("userName");
+  },
+
+  // 사용자 정보 제거
+  removeUserInfo: (): void => {
+    localStorage.removeItem("studentId");
+    localStorage.removeItem("userName");
+  },
+
+  // 로그아웃 (토큰과 사용자 정보 모두 제거)
+  logout: (): void => {
+    tokenUtils.removeToken();
+    tokenUtils.removeUserInfo();
   },
 };
 

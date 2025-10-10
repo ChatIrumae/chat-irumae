@@ -36,16 +36,17 @@ const LoginPage: React.FC = () => {
       const response = await authApi.login(formData);
 
       if (response) {
-        // 토큰 저장
-        tokenUtils.setToken(response);
+        // 토큰과 사용자 정보 저장
+        tokenUtils.setToken(response.token);
+        tokenUtils.setUserInfo(response.studentId, response.name);
 
         // 로그인 성공 처리
-        console.log("로그인 성공:", response.data);
+        console.log("로그인 성공:", response);
 
         // 메인 페이지로 리다이렉트
         navigate("/dashboard");
       } else {
-        setError(response.message || "로그인에 실패했습니다.");
+        setError("로그인에 실패했습니다.");
       }
     } catch (err) {
       const errorMessage =

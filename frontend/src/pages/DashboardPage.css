@@ -55,6 +55,25 @@
   text-align: center;
 }
 
+.user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0 1rem;
+  color: #ffffff;
+}
+
+.user-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin-bottom: 0.1rem;
+}
+
+.user-id {
+  font-size: 0.75rem;
+  color: #8e8ea0;
+}
+
 .logout-button {
   background-color: #10a37f;
   color: white;
@@ -69,151 +88,6 @@
 
 .logout-button:hover {
   background-color: #0d8a6b;
-}
-
-/* 메뉴 오버레이 */
-.menu-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 998;
-  animation: fadeIn 0.3s ease-in;
-}
-
-/* 사이드바 */
-.sidebar {
-  position: fixed;
-  top: 0;
-  left: -300px;
-  width: 300px;
-  height: 100vh;
-  background-color: #202123;
-  border-right: 1px solid #565869;
-  z-index: 999;
-  transition: left 0.3s ease-in-out;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.sidebar.open {
-  left: 0;
-}
-
-.sidebar-header {
-  padding: 1rem;
-  border-bottom: 1px solid #565869;
-}
-
-.new-chat-button {
-  width: 100%;
-  background-color: #10a37f;
-  color: white;
-  border: none;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition: background-color 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-}
-
-.new-chat-button:hover {
-  background-color: #0d8a6b;
-}
-
-.chat-history {
-  flex: 1;
-  padding: 1rem;
-  overflow-y: auto;
-}
-
-.chat-history h3 {
-  margin: 0 0 1rem 0;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #ffffff;
-}
-
-.no-history {
-  color: #8e8ea0;
-  font-size: 0.9rem;
-  text-align: center;
-  margin: 2rem 0;
-}
-
-.history-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.history-item {
-  display: flex;
-  align-items: center;
-  padding: 0.5rem;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  position: relative;
-  group: hover;
-}
-
-.history-item:hover {
-  background-color: #2a2b32;
-}
-
-.history-item.active {
-  background-color: #343541;
-}
-
-.history-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.history-title {
-  font-size: 0.9rem;
-  color: #ffffff;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-bottom: 0.25rem;
-}
-
-.history-date {
-  font-size: 0.75rem;
-  color: #8e8ea0;
-}
-
-.delete-button {
-  background: none;
-  border: none;
-  color: #8e8ea0;
-  cursor: pointer;
-  padding: 0.25rem;
-  border-radius: 4px;
-  opacity: 0;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.history-item:hover .delete-button {
-  opacity: 1;
-}
-
-.delete-button:hover {
-  background-color: #565869;
-  color: #ffffff;
 }
 
 /* 메시지 컨테이너 */
@@ -433,11 +307,6 @@
     font-size: 1.25rem;
   }
 
-  .sidebar {
-    width: 280px;
-    left: -280px;
-  }
-
   .messages-list {
     padding: 1rem;
   }
@@ -460,11 +329,6 @@
 }
 
 @media (max-width: 480px) {
-  .sidebar {
-    width: 100%;
-    left: -100%;
-  }
-
   .header-content {
     gap: 0.5rem;
   }
@@ -489,23 +353,5 @@
 }
 
 .messages-container::-webkit-scrollbar-thumb:hover {
-  background: #8e8ea0;
-}
-
-/* 사이드바 스크롤바 스타일링 */
-.chat-history::-webkit-scrollbar {
-  width: 6px;
-}
-
-.chat-history::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.chat-history::-webkit-scrollbar-thumb {
-  background: #565869;
-  border-radius: 3px;
-}
-
-.chat-history::-webkit-scrollbar-thumb:hover {
   background: #8e8ea0;
 }

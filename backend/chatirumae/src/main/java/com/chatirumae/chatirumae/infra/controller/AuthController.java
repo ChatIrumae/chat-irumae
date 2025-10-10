@@ -1,6 +1,7 @@
 package com.chatirumae.chatirumae.infra.controller;
 
 import com.chatirumae.chatirumae.core.service.AuthService;
+import com.chatirumae.chatirumae.infra.LoginResponse;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,13 +17,11 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public String login(@RequestBody LoginDTO loginDTO) {
+    public LoginResponse login(@RequestBody LoginDTO loginDTO) {
         String portalId = loginDTO.getPortalId();
         String portalPassword = loginDTO.getPortalPassword();
 
-        String token = authService.login(portalId, portalPassword);
-        // TODO: 이거보다 나은 솔루션 없나
-        return "\"" + token + "\"";
+        return authService.login(portalId, portalPassword);
     }
 }
 

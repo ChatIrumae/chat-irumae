@@ -7,6 +7,7 @@ import com.chatirumae.chatirumae.core.model.User;
 import com.chatirumae.chatirumae.core.model.UserBasicInfo;
 import com.chatirumae.chatirumae.core.repository.SessionRepository;
 import com.chatirumae.chatirumae.core.repository.UserRepository;
+import com.chatirumae.chatirumae.infra.LoginResponse;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -26,7 +27,7 @@ public class AuthService {
         this.uosPortalApi = uosPortalApi;
     }
 
-    public String login(String portalId, String portalPassword) {
+    public LoginResponse login(String portalId, String portalPassword) {
         // Null check
         if (portalId == null || portalPassword == null) {
             throw new IllegalArgumentException("Portal ID or password is null.");
@@ -37,10 +38,10 @@ public class AuthService {
 
         // 만약 사용자가 있는 경우
         if (user != null) {
-            // 비밀번호가 맞는다면 세션을 생성하고 세션 키를 반환한다.
+            // 비밀번호가 맞는다면 세션을 생성하고 LoginResponse를 반환한다.
             if (user.checkPassword(portalPassword)) {
                 String session = sessionRepository.createSession(user.getId());
-                return session;
+                return new LoginResponse(session, user.getStudentId(), user.getName());
             }
             // 비밀번호가 틀린 경우 예외를 발생시킨다.
             else {
@@ -67,7 +68,7 @@ public class AuthService {
                 throw new RuntimeException("포털 세션 생성에 실패했습니다. 로그를 확인하세요.", e);
             }
 
-            // 만약 로그인 정보가 올바르다면 사용자를 생성하고 세션을 저장한 후 세션 키를 반환한다.
+            // 만약 로그인 정보가 올바르다면 사용자를 생성하고 세션을 저장한 후 LoginResponse를 반환한다.
             if (uosSession != null) {
                 // 포털에서 사용자 생성에 필요한 정보를 가져온다.
                 UserBasicInfo userInfo = uosPortalApi.getUserBasicInfo(uosSession);
@@ -80,9 +81,9 @@ public class AuthService {
                 // 사용자를 DB에 저장한다.
                 userRepository.save(user);
 
-                // 세션을 생성하고 세션 키를 반환한다.
+                // 세션을 생성하고 LoginResponse를 반환한다.
                 String session = sessionRepository.createSession(user.getId());
-                return session;
+                return new LoginResponse(session, user.getStudentId(), user.getName());
             }
 
             // 로그인 정보가 올바르지 않은 경우 예외를 발생시킨다.
