@@ -145,13 +145,12 @@ const handleApiError = (error: any): Error => {
     if (axiosError.response) {
       // 서버에서 응답을 받았지만 에러 상태
       const message =
-        axiosError.response.data?.message || "서버 오류가 발생했습니다.";
+        axiosError.response.data?.message ||
+        "아이디 또는 비밀번호가 틀렸습니다";
       return new Error(message);
     } else if (axiosError.request) {
       // 요청을 보냈지만 응답을 받지 못함
-      return new Error(
-        "네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요."
-      );
+      return new Error("올바른 아이디와 비밀번호를 입력해주세요.");
     }
   }
 

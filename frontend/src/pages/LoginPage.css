@@ -140,6 +140,12 @@
   margin: 0;
 }
 
+.login-footer-span {
+  color: #666;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
 .login-footer a {
   color: #667eea;
   text-decoration: none;

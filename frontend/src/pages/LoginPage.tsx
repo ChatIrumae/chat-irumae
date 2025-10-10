@@ -104,6 +104,9 @@ const LoginPage: React.FC = () => {
           <p>
             계정이 없으신가요? <a href="/register">회원가입</a>
           </p>
+          <span className="login-footer-span">
+            초기 로그인시 시간이 오래 소요될 수 있습니다.
+          </span>
         </div>
       </div>
     </div>
