@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Date;
+
 @RestController
 @RequestMapping("/api")
 public class ChatController {
@@ -23,11 +25,15 @@ public class ChatController {
     @PostMapping("/chat")
     public String chat(@RequestBody ChatRequestDto requestDto) {
         // DTO 객체를 통해 깔끔하게 메시지 내용에 접근 가능
-        String userMessage = requestDto.getMessage();
+        String userMessage = requestDto.getContent();
+        Date timestamp = requestDto.getTimestamp();
+        String currentChatId = requestDto.getCurrentChatId();
+        String sender = requestDto.getSender();
+
         System.out.println("사용자 메시지: " + userMessage);
 
         // 주입받은 ChatService를 사용하여 비즈니스 로직 처리
-        String responseMessage = chatService.getResponse(userMessage);
+        String responseMessage = chatService.getResponse(userMessage, timestamp, currentChatId, sender);
 
         return responseMessage; // 실제 응답 반환
     }
@@ -39,18 +45,25 @@ public class ChatController {
 }
 
 class ChatRequestDto {
-    private String message;
+    private String id;
+    private String content;
+    private String sender;
+    private Date timestamp;
+    private String currentChatId;
 
     // Jackson 라이브러리가 JSON을 객체로 변환하려면
     // 기본 생성자와 Getter/Setter가 필요합니다.
     public ChatRequestDto() {
     }
 
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
+    public String getId() {return id;}
+    public void setId(String id) {this.id = id;}
+    public String getContent() {return content;}
+    public void setContent(String content) {this.content = content;}
+    public String getSender() {return sender;}
+    public void setSender(String sender) {this.sender = sender;}
+    public Date getTimestamp() {return timestamp;}
+    public void setTimestamp(Date timestamp) {this.timestamp = timestamp;}
+    public String getCurrentChatId() {return currentChatId;}
+    public void setCurrentChatId(String currentChatId) {this.currentChatId = currentChatId;}
 }

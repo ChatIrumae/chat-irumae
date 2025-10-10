@@ -7,6 +7,7 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
 import java.util.List;
 
 @Service
@@ -23,10 +24,13 @@ public class ChatService {
         this.gptApi = gptApi;
     }
 
-    public String getResponse(String userMessage) {
+    public String getResponse(String userMessage, Date date, String currentChatId, String sender) {
         try {
             System.out.println("사용자 메시지: " + userMessage);
-            
+            System.out.println("사용자 메시지: " + date);
+            System.out.println("사용자 메시지: " + currentChatId);
+            System.out.println("사용자 메시지: " + sender);
+
             // VectorStore 검색 시도
             try {
                 System.out.println("=== VectorStore 검색 시작 ===");

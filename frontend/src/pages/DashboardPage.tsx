@@ -8,6 +8,15 @@ export interface Message {
   content: string;
   sender: "user" | "assistant";
   timestamp: Date;
+  currentChatId: string | null;
+}
+
+export interface ChatHistory {
+  id: string;
+  title: string;
+  messages: Message[];
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const DashboardPage: React.FC = () => {
@@ -15,14 +24,68 @@ const DashboardPage: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [chatHistories, setChatHistories] = useState<ChatHistory[]>([]);
+  const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // 컴포넌트 마운트 시 인증 확인
+  // 컴포넌트 마운트 시 인증 확인 및 채팅 히스토리 로드
   useEffect(() => {
     if (!tokenUtils.isAuthenticated()) {
       navigate("/login");
+    } else {
+      loadChatHistories();
     }
   }, [navigate]);
+
+  // 채팅 히스토리 로드
+  const loadChatHistories = () => {
+    const saved = localStorage.getItem("chatHistories");
+    if (saved) {
+      const histories = JSON.parse(saved).map((history: any) => ({
+        ...history,
+        createdAt: new Date(history.createdAt),
+        updatedAt: new Date(history.updatedAt),
+        messages: history.messages.map((msg: any) => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp),
+        })),
+      }));
+      setChatHistories(histories);
+    }
+  };
+
+  // 채팅 히스토리 저장
+  const saveChatHistories = (histories: ChatHistory[]) => {
+    localStorage.setItem("chatHistories", JSON.stringify(histories));
+    setChatHistories(histories);
+  };
+
+  // 새 채팅 시작
+  const startNewChat = () => {
+    setMessages([]);
+    setCurrentChatId(null);
+    setIsMenuOpen(false);
+  };
+
+  // 채팅 히스토리 로드
+  const loadChat = (chatId: string) => {
+    const chat = chatHistories.find((h) => h.id === chatId);
+    if (chat) {
+      setMessages(chat.messages);
+      setCurrentChatId(chatId);
+      setIsMenuOpen(false);
+    }
+  };
+
+  // 채팅 히스토리 삭제
+  const deleteChat = (chatId: string) => {
+    const updatedHistories = chatHistories.filter((h) => h.id !== chatId);
+    saveChatHistories(updatedHistories);
+    if (currentChatId === chatId) {
+      startNewChat();
+    }
+  };
 
   // 메시지 목록이 업데이트될 때마다 스크롤을 맨 아래로
   useEffect(() => {
@@ -42,25 +105,32 @@ const DashboardPage: React.FC = () => {
       content: inputMessage.trim(),
       sender: "user",
       timestamp: new Date(),
+      currentChatId: currentChatId,
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    const updatedMessages = [...messages, userMessage];
+    setMessages(updatedMessages);
     const currentMessage = inputMessage.trim();
     setInputMessage("");
     setIsLoading(true);
 
     try {
       // 실제 API 호출
-      const response = await chatApi.sendMessage(currentMessage);
+      const response = await chatApi.sendMessage(userMessage);
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         content: response || "죄송합니다. 응답을 받을 수 없습니다.",
         sender: "assistant",
         timestamp: new Date(),
+        currentChatId: currentChatId,
       };
 
-      setMessages((prev) => [...prev, assistantMessage]);
+      const finalMessages = [...updatedMessages, assistantMessage];
+      setMessages(finalMessages);
+
+      // 채팅 히스토리 저장
+      saveChatToHistory(finalMessages, currentMessage);
     } catch (error) {
       console.error("메시지 전송 오류:", error);
 
@@ -72,10 +142,47 @@ const DashboardPage: React.FC = () => {
         timestamp: new Date(),
       };
 
-      setMessages((prev) => [...prev, errorMessage]);
+      const finalMessages = [...updatedMessages, errorMessage];
+      setMessages(finalMessages);
+      saveChatToHistory(finalMessages, currentMessage);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // 채팅을 히스토리에 저장
+  const saveChatToHistory = (messages: Message[], firstMessage: string) => {
+    const now = new Date();
+    const chatId = currentChatId || Date.now().toString();
+
+    const chatTitle =
+      firstMessage.length > 30
+        ? firstMessage.substring(0, 30) + "..."
+        : firstMessage;
+
+    const chatHistory: ChatHistory = {
+      id: chatId,
+      title: chatTitle,
+      messages: messages,
+      createdAt: currentChatId
+        ? chatHistories.find((h) => h.id === currentChatId)?.createdAt || now
+        : now,
+      updatedAt: now,
+    };
+
+    let updatedHistories;
+    if (currentChatId) {
+      // 기존 채팅 업데이트
+      updatedHistories = chatHistories.map((h) =>
+        h.id === currentChatId ? chatHistory : h
+      );
+    } else {
+      // 새 채팅 추가
+      updatedHistories = [chatHistory, ...chatHistories];
+      setCurrentChatId(chatId);
+    }
+
+    saveChatHistories(updatedHistories);
   };
 
   const handleLogout = () => {
@@ -92,9 +199,94 @@ const DashboardPage: React.FC = () => {
 
   return (
     <div className="dashboard-container">
+      {/* 햄버거 메뉴 오버레이 */}
+      {isMenuOpen && (
+        <div className="menu-overlay" onClick={() => setIsMenuOpen(false)} />
+      )}
+
+      {/* 사이드바 메뉴 */}
+      <div className={`sidebar ${isMenuOpen ? "open" : ""}`}>
+        <div className="sidebar-header">
+          <button onClick={startNewChat} className="new-chat-button">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M12 5V19M5 12H19"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            새 채팅
+          </button>
+        </div>
+
+        <div className="chat-history">
+          <h3>채팅 히스토리</h3>
+          {chatHistories.length === 0 ? (
+            <p className="no-history">아직 채팅 기록이 없습니다.</p>
+          ) : (
+            <div className="history-list">
+              {chatHistories.map((chat) => (
+                <div
+                  key={chat.id}
+                  className={`history-item ${
+                    currentChatId === chat.id ? "active" : ""
+                  }`}
+                >
+                  <div
+                    className="history-content"
+                    onClick={() => loadChat(chat.id)}
+                  >
+                    <div className="history-title">{chat.title}</div>
+                    <div className="history-date">
+                      {chat.updatedAt.toLocaleDateString("ko-KR", {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </div>
+                  </div>
+                  <button
+                    className="delete-button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteChat(chat.id);
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                      <path
+                        d="M18 6L6 18M6 6L18 18"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* 헤더 */}
       <header className="dashboard-header">
         <div className="header-content">
+          <button
+            className="hamburger-button"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path
+                d="M3 12H21M3 6H21M3 18H21"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
           <h1>Chat Irumae</h1>
           <button onClick={handleLogout} className="logout-button">
             로그아웃

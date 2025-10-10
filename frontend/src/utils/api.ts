@@ -4,6 +4,7 @@ import axios, {
   AxiosError,
 } from "axios";
 import { config } from "../config/env";
+import type { Message } from "../pages/DashboardPage";
 
 // API 기본 URL 설정
 const API_BASE_URL = config.API_BASE_URL;
@@ -124,11 +125,9 @@ export const authApi = {
 // 채팅 API
 export const chatApi = {
   // 채팅 메시지 전송
-  sendMessage: async (message: string): Promise<string> => {
+  sendMessage: async (message: Message): Promise<string> => {
     try {
-      const response = await apiClient.post<string>("/api/chat", {
-        message: message,
-      });
+      const response = await apiClient.post<string>("/api/chat", message);
       return response.data;
     } catch (error) {
       throw handleApiError(error);
