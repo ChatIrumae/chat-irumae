@@ -1,0 +1,134 @@
+/* src/styles/chatting-page.css */
+:root {
+  --blue-700: #27408b;
+  --blue-600: #2f55b1;
+  --border: #e6e8ef;
+  --text: #1a1a1a;
+  --muted: #677085;
+  --bg: #ffffff;
+}
+
+.chatting-root {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* Topbar */
+.chat-topbar {
+  position: sticky;
+  top: 0;
+  background: var(--blue-700);
+  color: #fff;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.08);
+}
+.chat-topbar__inner {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.brand img { height: 36px; width: 36px; object-fit: contain; }
+.brand__title { font-weight: 700; letter-spacing: .2px; }
+
+/* 버튼 크기 그대로 */
+.hamburger{
+  justify-self: end;
+  width: 40px; height: 40px;
+  border: 0; background: transparent; cursor: pointer;
+  position: relative;
+}
+
+/* 세 줄 공통 스타일: 길이/두께 동일 + 가운데 정렬 */
+.hamburger span,
+.hamburger span::before,
+.hamburger span::after{
+  content: "";
+  position: absolute;
+  left: 50%;
+  width: 22px;             /* ← 세 줄 모두 같은 길이 */
+  height: 2px;             /* ← 같은 두께 */
+  background: #fff;
+  transform: translateX(-50%);
+  border-radius: 1px;
+}
+
+/* 세 줄 간격(12 / 19 / 26px 지점) */
+.hamburger span{ top: 19px; }
+.hamburger span::before{ top: -7px; }
+.hamburger span::after{ top: 7px; }
+
+/* Stage (center mascot + bubble) */
+.stage {
+  display: grid;
+  place-items: center;
+  padding: 40px 16px 96px; /* 아래 입력창 공간 확보 */
+}
+.owl {
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+}
+.owl__img {
+  width: clamp(140px, 20vw, 200px);
+  height: auto;
+  user-select: none;
+}
+.bubble {
+  margin: 0;
+  background: #eaf3ff;
+  color: var(--muted);
+  border: 1px solid #d7e5ff;
+  border-radius: 10px;
+  padding: 14px 16px;
+  line-height: 1.5;
+  max-width: 420px;
+  text-align: left;
+  box-shadow: 0 1px 0 rgba(0,0,0,.03);
+}
+
+/* Ask bar (bottom) */
+.askbar {
+  position: sticky;
+  bottom: 0;
+  padding: 12px 16px 16px;
+  background: linear-gradient(to top, #fff 70%, rgba(255,255,255,0));
+}
+.askbar__input {
+  width: 100%;
+  max-width: 800px;
+  height: 44px;
+  margin: 0 auto;
+  display: block;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0 48px 0 14px;
+  outline: none;
+  font-size: 14px;
+}
+.askbar__input:focus { border-color: var(--blue-600); box-shadow: 0 0 0 3px rgba(47,85,177,.12); }
+
+.askbar__send {
+  position: absolute;
+  right: calc(50% - min(400px, 50vw) - 4px); /* input 우측 안쪽 정렬 */
+  transform: translateY(-44px);
+  width: 44px; height: 44px;
+  border: none; border-radius: 10px;
+  background: var(--blue-600);
+  display: grid; place-items: center;
+  cursor: pointer;
+}
+.askbar__send svg { fill: #fff; }
+@media (max-width: 880px) {
+  .askbar__send { right: 20px; }
+}
