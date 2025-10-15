@@ -1,3 +1,4 @@
+/*<<<<<<< HEAD
 import {
   BrowserRouter as Router,
   Routes,
@@ -23,3 +24,13 @@ function App() {
 }
 
 export default App;
+=======*/
+
+import './styles/variables.css';
+import './styles/global.css';
+import Login from './pages/Login';
+
+export default function App() {
+  return <Login />;
+}
+//>>>>>>> 37ff5c9 (Login Page)
