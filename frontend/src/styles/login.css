@@ -3,9 +3,9 @@
 --------------------------------*/
 .login-root {
   position: relative;
-  min-height: 100dvh;        /* 브라우저 높이에 맞추기 (모바일 대응) */
-  display: grid;             /* 중앙 정렬을 위해 grid 사용 */
-  place-items: center;       /* 가로+세로 정중앙 */
+  min-height: 100dvh; /* 브라우저 높이에 맞추기 (모바일 대응) */
+  display: grid; /* 중앙 정렬을 위해 grid 사용 */
+  place-items: center; /* 가로+세로 정중앙 */
   background: var(--blue-900);
   overflow: hidden;
 }
@@ -16,8 +16,8 @@
   z-index: 2;
   display: grid;
   place-items: center;
-  width: auto;               /* 카드 폭에 맞춤 */
-  margin: 0 auto;            /* 혹시 남는 여백 방지 */
+  width: auto; /* 카드 폭에 맞춤 */
+  margin: 0 auto; /* 혹시 남는 여백 방지 */
   padding: 0;
 }
 
@@ -40,15 +40,30 @@
   height: 1000px;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.1) 0%,
+    transparent 70%
+  );
   filter: blur(80px);
   opacity: 0.6;
 }
 
-
-.bg-ring-1 { width: 480px; height: 480px; opacity: .35; }
-.bg-ring-2 { width: 360px; height: 360px; opacity: .45; }
-.bg-ring-3 { width: 240px; height: 240px; opacity: .55; }
+.bg-ring-1 {
+  width: 480px;
+  height: 480px;
+  opacity: 0.35;
+}
+.bg-ring-2 {
+  width: 360px;
+  height: 360px;
+  opacity: 0.45;
+}
+.bg-ring-3 {
+  width: 240px;
+  height: 240px;
+  opacity: 0.55;
+}
 
 .bg-blob {
   position: absolute;
@@ -56,7 +71,11 @@
   top: -20%;
   width: 80vw;
   height: 80vh;
-  background: radial-gradient(circle at 60% 40%, rgba(255,255,255,0.15), transparent 70%);
+  background: radial-gradient(
+    circle at 60% 40%,
+    rgba(255, 255, 255, 0.15),
+    transparent 70%
+  );
   filter: blur(100px);
   opacity: 0.5;
 }
@@ -69,7 +88,7 @@
   max-width: 92vw;
   background: var(--card-bg);
   backdrop-filter: blur(6px);
-  border: 1px solid rgba(255, 255, 255, .14);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow);
   padding: 28px 26px 22px;
@@ -86,7 +105,7 @@
   height: 92px;
   object-fit: contain;
   border-radius: 50%;
-  background: rgba(255, 255, 255, .06);
+  background: rgba(255, 255, 255, 0.06);
   padding: 8px;
   margin: 0 auto 4px;
 }
@@ -110,12 +129,12 @@
   width: 100%;
   height: 40px;
   padding: 0 12px 0 40px;
-  background: rgba(255, 255, 255, .08);
-  border: 1px solid rgba(255, 255, 255, .18);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: var(--radius-lg);
   color: var(--white);
   outline: none;
-  letter-spacing: .04em;
+  letter-spacing: 0.04em;
 }
 
 .input::placeholder {
@@ -124,7 +143,7 @@
 
 .input:focus {
   border-color: var(--blue-600);
-  box-shadow: 0 0 0 3px rgba(31, 86, 240, .25);
+  box-shadow: 0 0 0 3px rgba(31, 86, 240, 0.25);
 }
 
 .input-icon {
@@ -133,7 +152,7 @@
   width: 18px;
   height: 18px;
   fill: #e2e8f0;
-  opacity: .9;
+  opacity: 0.9;
 }
 
 /* -------------------------------
@@ -146,9 +165,9 @@
   background: linear-gradient(180deg, #2f5ffb, #1f56f0);
   color: var(--white);
   font-weight: 700;
-  letter-spacing: .06em;
+  letter-spacing: 0.06em;
   cursor: pointer;
-  transition: transform .08s ease, filter .15s ease;
+  transition: transform 0.08s ease, filter 0.15s ease;
 }
 
 .btn:hover {
@@ -156,7 +175,7 @@
 }
 
 .btn:active {
-  transform: translateY(1px) scale(.998);
+  transform: translateY(1px) scale(0.998);
 }
 
 /* -------------------------------
@@ -173,4 +192,18 @@
 
 .forgot:hover {
   color: #e5eaf5;
+}
+
+/* -------------------------------
+   에러 메시지
+--------------------------------*/
+.error-message {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+  padding: 8px 12px;
+  border-radius: var(--radius-lg);
+  font-size: 12px;
+  text-align: center;
+  margin-top: 4px;
 }
