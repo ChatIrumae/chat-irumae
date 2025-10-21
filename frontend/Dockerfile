@@ -8,7 +8,7 @@ FROM node:20-alpine as builder
 WORKDIR /app
 
 ARG VITE_API_BASE_URL
-ENV VITE_API_BASE_URL=http://chat-irumae-back.kro.kr
+ENV VITE_API_BASE_URL=https://chat-irumae-back.kro.kr
 
 # package.json과 package-lock.json 파일을 복사합니다.
 COPY package.json ./
