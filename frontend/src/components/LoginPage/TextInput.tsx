@@ -1,11 +1,11 @@
-import React, { type InputHTMLAttributes } from 'react';
+import { type InputHTMLAttributes } from "react";
 
 type Props = InputHTMLAttributes<HTMLInputElement> & {
-  icon?: 'user' | 'lock';
+  icon?: "user" | "lock";
 };
 
-function Icon({ name }: { name: 'user' | 'lock' }) {
-  if (name === 'user') {
+function Icon({ name }: { name: "user" | "lock" }) {
+  if (name === "user") {
     return (
       <svg viewBox="0 0 24 24" className="input-icon" aria-hidden>
         <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5Z" />
