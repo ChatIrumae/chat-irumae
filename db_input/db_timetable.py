@@ -1,4 +1,17 @@
 import chromadb
+from openai import OpenAI
+import os
+
+# OpenAI 클라이언트 초기화
+client_openai = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+
+# OpenAI 임베딩 함수
+def get_embedding(text):
+    response = client_openai.embeddings.create(
+        model="text-embedding-3-small",
+        input=text
+    )
+    return response.data[0].embedding
 
 # 파일 읽기 - 각 항목 구분 후 리스트 반환
 def load_timetable_file(filepath):
@@ -43,17 +56,22 @@ def build_collections(records):
     
     return documents, metadatas, ids
 
-# batch 단위로 데이터 추가 함수
-def batch_add(collection, documents, metadatas, ids, batch_size=100):
+# 배치 단위로 데이터 추가 함수 (OpenAI 임베딩 사용, batch_size=10)
+def batch_add(collection, documents, metadatas, ids, batch_size=10):
     total = len(documents)
     for i in range(0, total, batch_size):
         batch_docs = documents[i:i+batch_size]
         batch_meta = metadatas[i:i+batch_size]
         batch_ids = ids[i:i+batch_size]
+        
+        # OpenAI 임베딩 생성
+        embeddings = [get_embedding(doc) for doc in batch_docs]
+        
         collection.add(
             documents=batch_docs,
             metadatas=batch_meta,
-            ids=batch_ids
+            ids=batch_ids,
+            embeddings=embeddings
         )
         print(f"Batch {i // batch_size + 1}: {len(batch_docs)}개 문서 추가 완료.")
 
@@ -63,7 +81,7 @@ def main():
     client = chromadb.HttpClient(host='chat-irumae.kro.kr', port=8000, ssl=True)
     print("ChromaDB 서버에 성공적으로 연결되었습니다.")
     
-    collection_name = "TimetableCollection"
+    collection_name = "SpringAiCollection"
     collection = client.get_or_create_collection(name=collection_name)
     print(f"'{collection_name}' 컬렉션을 준비했습니다.")
     
@@ -72,7 +90,7 @@ def main():
     documents, metadatas, ids = build_collections(records)
     
     # 배치 단위로 데이터 추가
-    batch_add(collection, documents, metadatas, ids, batch_size=100)
+    batch_add(collection, documents, metadatas, ids, batch_size=10)
     
     print(f"총 {len(documents)}개의 문서를 컬렉션에 저장 완료.")
 
