@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import "../styles/chatting-page.css";
+import { chatApi } from "../utils/api";
 
 type Role = "assistant" | "user";
 type ChatMessage = { id: string; role: Role; text: string; at: number };
@@ -28,9 +29,26 @@ function clamp(s: string, n: number) {
   return t.length > n ? t.slice(0, n).trimEnd() + "…" : t;
 }
 
-/** 데모용 봇 응답(원하면 API 응답으로 교체) */
-function generateBotReply(userText: string) {
-  return `“${userText}”에 대해 확인해 볼게요. 이어서 관련 정보를 정리해 드릴게요.`;
+/** 실제 API를 통한 봇 응답 생성 */
+async function generateBotReply(
+  userText: string,
+  currentChatId: string
+): Promise<string> {
+  try {
+    const message = {
+      id: crypto.randomUUID(),
+      content: userText,
+      sender: "user",
+      timestamp: new Date(),
+      currentChatId: currentChatId,
+    };
+
+    const response = await chatApi.sendMessage(message);
+    return response;
+  } catch (error) {
+    console.error("API 호출 중 오류 발생:", error);
+    return `죄송합니다. "${userText}"에 대한 응답을 생성하는 중 오류가 발생했습니다. 다시 시도해 주세요.`;
+  }
 }
 
 /** 한 글자씩 출력하는 타이핑 효과 */
@@ -126,9 +144,8 @@ export default function ChattingPage() {
   };
 
   // ----- 봇 타이핑/응답 시작 -----
-  const startBotReply = (userText: string) => {
+  const startBotReply = async (userText: string) => {
     const botId = crypto.randomUUID();
-    const full = generateBotReply(userText);
 
     // 1) 우선 빈 assistant 메시지를 추가해두고
     setSessions((prev) => {
@@ -150,33 +167,59 @@ export default function ChattingPage() {
 
     setIsTyping(true);
 
-    // 2) 한 글자씩 채워가기
-    typeOut({
-      full,
-      step: 18,
-      onUpdate: (partial) => {
-        setSessions((prev) => {
-          const next = prev.map((s) =>
-            s.id === activeId
-              ? {
-                  ...s,
-                  messages: s.messages.map((m) =>
-                    m.id === botId ? { ...m, text: partial } : m
-                  ),
-                  updatedAt: now(),
-                }
-              : s
-          );
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-          return next;
-        });
-      },
-      onDone: () => setIsTyping(false),
-    });
+    try {
+      // 2) API 호출하여 실제 응답 받기
+      const full = await generateBotReply(userText, activeId);
+
+      // 3) 한 글자씩 채워가기
+      typeOut({
+        full,
+        step: 18,
+        onUpdate: (partial) => {
+          setSessions((prev) => {
+            const next = prev.map((s) =>
+              s.id === activeId
+                ? {
+                    ...s,
+                    messages: s.messages.map((m) =>
+                      m.id === botId ? { ...m, text: partial } : m
+                    ),
+                    updatedAt: now(),
+                  }
+                : s
+            );
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+            return next;
+          });
+        },
+        onDone: () => setIsTyping(false),
+      });
+    } catch (error) {
+      console.error("봇 응답 생성 중 오류:", error);
+      // 에러 발생 시 에러 메시지 표시
+      const errorMessage =
+        "죄송합니다. 응답을 생성하는 중 오류가 발생했습니다.";
+      setSessions((prev) => {
+        const next = prev.map((s) =>
+          s.id === activeId
+            ? {
+                ...s,
+                messages: s.messages.map((m) =>
+                  m.id === botId ? { ...m, text: errorMessage } : m
+                ),
+                updatedAt: now(),
+              }
+            : s
+        );
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        return next;
+      });
+      setIsTyping(false);
+    }
   };
 
   // ----- 메시지 전송 -----
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const v = text.trim();
     if (!v) return;
@@ -204,7 +247,7 @@ export default function ChattingPage() {
     setText("");
 
     // ✅ 봇 자동 응답(타이핑) 시작
-    startBotReply(v);
+    await startBotReply(v);
   };
 
   // ----- 새 채팅 만들기 -----
