@@ -15,7 +15,6 @@ interface HamburgerMenuProps {
   onNewChat: () => void;
   onLoadChat: (chatId: string) => void;
   onDeleteChat: (chatId: string) => void;
-  onLogout: () => void;
   chatHistories: ChatHistory[];
   currentChatId: string | null;
 }
@@ -26,7 +25,6 @@ const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
   onNewChat,
   onLoadChat,
   onDeleteChat,
-  onLogout,
   chatHistories,
   currentChatId,
 }) => {
@@ -101,27 +99,7 @@ const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
         </div>
 
         {/* 로그아웃 버튼 */}
-        <div className="sidebar-footer">
-          <button
-            className="logout-button"
-            onClick={() => {
-              if (confirm("로그아웃 하시겠습니까?")) {
-                onLogout();
-              }
-            }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            로그아웃
-          </button>
-        </div>
+        <div className="sidebar-footer"></div>
       </div>
     </>
   );
