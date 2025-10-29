@@ -100,14 +100,12 @@ public class ChatHistoryService {
         
         // 먼저 currentChatId로 ChatHistory 찾기
         Optional<ChatHistory> existingChat = chatHistoryRepository.findById(currentChatId);
-        System.out.println("기존 ChatHistory 존재 여부: " + existingChat.isPresent());
 
         ChatHistory chatHistory;
         if (existingChat.isPresent()) {
             // 기존 채팅 히스토리가 있으면 메시지 추가
             chatHistory = existingChat.get();
             System.out.println("기존 ChatHistory ID: " + chatHistory.getId());
-            System.out.println("기존 ChatHistory userId: " + chatHistory.getUserId());
             
             // 사용자 ID 확인 (보안) - sender를 userId로 사용
             if (!sender.equals(chatHistory.getUserId())) {

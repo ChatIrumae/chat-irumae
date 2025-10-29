@@ -5,10 +5,12 @@ import com.chatirumae.chatirumae.core.model.ChatHistory;
 import com.chatirumae.chatirumae.core.model.ChatHistorySummary;
 import com.chatirumae.chatirumae.infra.ChatGptApi;
 import org.springframework.ai.document.Document;
+import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -73,19 +75,53 @@ public class ChatService {
                 System.out.println("사용자 메시지: " + userMessage);
                 System.out.println("사용자 메시지 길이: " + userMessage.length());
 
+//                SearchRequest request = SearchRequest.query(userMessage)
+//                        .withTopK(5) // (선택) 최대 5개의 문서를 가져옵니다.
+//                        .withSimilarityThreshold(0.7); // (핵심) 유사도 0.7 이상인 문서만 필터링합니다.
+
                 // Embedding 테스트를 위한 간단한 검색
                 System.out.println("Embedding을 통한 유사도 검색을 시작합니다...");
                 List<Document> similarDocuments = vectorStore.similaritySearch(userMessage);
                 
                 if (similarDocuments != null && !similarDocuments.isEmpty()) {
                     System.out.println("검색된 문서 수: " + similarDocuments.size());
-                    
-                    // 각 문서의 내용(content)만 추출하여 하나의 문자열로 합칩니다.
-                    // String context = similarDocuments.stream().toString();
+
+                    StringBuilder contextBuilder = new StringBuilder();
+
+                    for (int i = 0; i < similarDocuments.size(); i++) {
+                        Document document = similarDocuments.get(i);
+                        String content = document.getContent(); // 문서 내용 가져오기
+
+                        System.out.println("문서 " + (i + 1) + ":");
+                        // getContent() 메서드로 문서 내용을 가져옵니다.
+                        System.out.println(document.getContent());
+
+                        contextBuilder.append("--- 참고 문서 " + (i + 1) + " ---\n");
+                        contextBuilder.append(content);
+                        contextBuilder.append("\n\n"); // 문서 사이에 공백 추가
+
+                        System.out.println("-------------------------");
+                    }
+
+                    final String RAG_PROMPT_TEMPLATE = """
+                    당신은 유용한 AI 챗봇 어시스턴트입니다.
+                    주어진 '참고 정보(컨텍스트)'를 바탕으로 사용자의 '질문'에 대해 답변해야 합니다.
+                    답변은 반드시 '참고 정보'에 근거해야 하며, 정보에 없는 내용은 답변하지 마세요.
+                    '참고 정보'에서 답변을 찾을 수 없다면, "죄송합니다, 관련 정보를 찾을 수 없습니다."라고 답변하세요.
+                    사용자가 어색하지 않게 친근한 말투로 정보를 잘 정리해서 답변하세요.                
+                    [참고 정보]
+                    %s
+                
+                    [사용자 질문]
+                    %s
+                
+                    [답변]
+                    """;
+                    String context = contextBuilder.toString();
+                    String finalPrompt = finalPrompt = String.format(RAG_PROMPT_TEMPLATE, context, userMessage);
 
                     // 컨텍스트와 함께 GPT API 호출
-//                    String response = gptApi.generateResponse(userMessage, List.of(context)).block();
-                    String response = "테스트";
+                    String response = gptApi.generateResponse(finalPrompt, List.of(Collections.singletonList(context))).block();
                     
                     // AI 응답 메시지를 ChatHistory에 추가
                     chatHistoryService.addMessageToChatHistory(currentChatId, sender, response, "assistant");

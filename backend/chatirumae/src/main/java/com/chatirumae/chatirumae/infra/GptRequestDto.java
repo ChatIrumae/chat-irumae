@@ -3,6 +3,7 @@ package com.chatirumae.chatirumae.infra;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 
+
 public class GptRequestDto {
     private String model;
     private List<Message> messages;

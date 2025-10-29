@@ -19,9 +19,9 @@ public class ChatGptApi implements GptApi {
     @Override
     public Mono<String> generateResponse(String prompt, List<List<String>> responses) {
         GptRequestDto requestBody = new GptRequestDto("gpt-3.5-turbo", prompt);
-        
+
         return openAiWebClient.post()
-                .uri("/chat/completions")
+                .uri("/v1/chat/completions")
                 .bodyValue(requestBody)
                 .retrieve()
                 .bodyToMono(GptResponseDto.class)
@@ -30,6 +30,13 @@ public class ChatGptApi implements GptApi {
                         return response.getChoices().get(0).getMessage().getContent();
                     }
                     return "죄송합니다. 응답을 생성할 수 없습니다.";
+                })
+                .doOnError(error -> {
+                    // !!! 실제 에러가 여기 출력됩니다 !!!
+                    System.err.println("!!! OpenAI API 호출 실패 !!!");
+                    System.err.println(error.getMessage());
+                    // (더 자세한 디버깅을 위해 전체 스택 트레이스를 출력할 수도 있습니다)
+                    // error.printStackTrace();
                 })
                 .onErrorReturn("OpenAI API 호출 중 오류가 발생했습니다. 다시 시도해주세요.");
     }
