@@ -275,6 +275,16 @@
   background: rgba(255, 255, 255, 0.15);
   color: #fff;
 }
+.btn--logout {
+  background: rgba(220, 53, 69, 0.8);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn--logout:hover {
+  background: rgba(220, 53, 69, 1);
+}
 .btn--light:hover {
   background: rgba(255, 255, 255, 0.25);
 }

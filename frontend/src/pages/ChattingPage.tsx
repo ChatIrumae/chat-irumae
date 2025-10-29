@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "../styles/chatting-page.css";
-import { chatApi } from "../utils/api";
+import { chatApi, authApi } from "../utils/api";
 
 type Role = "assistant" | "user";
 type ChatMessage = { id: string; role: Role; text: string; at: number };
@@ -78,6 +79,8 @@ function typeOut({
 }
 
 export default function ChattingPage() {
+  const navigate = useNavigate();
+
   // ----- 로컬스토리지 로드 -----
   const [sessions, setSessions] = useState<ChatSession[]>(() => {
     try {
@@ -123,6 +126,22 @@ export default function ChattingPage() {
 
   const listRef = useRef<HTMLDivElement>(null);
   const started = active.messages.some((m) => m.role === "user"); // 첫 질문 이후면 true
+
+  // ----- 로그아웃 함수 -----
+  const handleLogout = async () => {
+    if (confirm("로그아웃 하시겠습니까?")) {
+      try {
+        await authApi.logout();
+        localStorage.removeItem("authToken");
+        navigate("/login");
+      } catch (error) {
+        console.error("로그아웃 중 오류:", error);
+        // 에러가 발생해도 로컬 토큰을 제거하고 로그인 페이지로 이동
+        localStorage.removeItem("authToken");
+        navigate("/login");
+      }
+    }
+  };
 
   // ----- 저장 헬퍼 -----
   const persist = (
@@ -400,6 +419,23 @@ export default function ChattingPage() {
           >
             <button className="btn btn--light" onClick={createNewChat}>
               새 채팅
+            </button>
+            <button
+              className="btn btn--logout"
+              onClick={handleLogout}
+              aria-label="로그아웃"
+              title="로그아웃"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              로그아웃
             </button>
             <button
               className="hamburger"
