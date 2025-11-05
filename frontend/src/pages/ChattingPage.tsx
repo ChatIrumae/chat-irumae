@@ -8,14 +8,14 @@ type ChatMessage = { id: string; role: Role; text: string; at: number };
 
 type ChatSession = {
   id: string;
-  title: string; // 첫 질문으로 생성
+  title: string;       // 첫 질문으로 생성
   messages: ChatMessage[]; // 모든 메시지
-  updatedAt: number; // 마지막 갱신 시간
+  updatedAt: number;   // 마지막 갱신 시간
 };
 
 const STORAGE_KEY = "CHAT_SESSIONS_V1";
 
-/** ✅ 여기서 상단바 배치 변경
+/** ✅ 상단바 배치 변경
  *  - "logo-left"  : 로고 좌측, 메뉴 우측(기본)
  *  - "logo-right" : 메뉴 좌측, 로고 우측
  *  - "logo-center": 로고 가운데, 메뉴 우측(아이폰 스타일)
@@ -76,6 +76,45 @@ function typeOut({
     }
   };
   setTimeout(tick, 450 + Math.random() * 250); // 시작 전 “생각” 딜레이
+}
+
+/* =========================
+   ✅ 실측 기반 말풍선 폭 계산
+   ========================= */
+const MEASURE_FONT =
+  '14px ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", Arial, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif';
+
+/** 주어진 텍스트(개행 포함)의 실제 픽셀 폭 측정(가장 긴 줄 기준) */
+function measureTextPx(text: string, font = MEASURE_FONT): number {
+  const canvas =
+    (measureTextPx as any)._canvas ||
+    ((measureTextPx as any)._canvas = document.createElement("canvas"));
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return 0;
+  ctx.font = font;
+
+  // 여러 줄이면 가장 긴 줄의 폭을 사용
+  const lines = (text || "").split(/\r?\n/);
+  let max = 0;
+  for (const line of lines) {
+    const w = ctx.measureText(line).width;
+    if (w > max) max = w;
+  }
+  return Math.ceil(max);
+}
+
+/** 실제 텍스트 폭 + 패딩으로 말풍선 폭을 산출하고 min/max로 클램프 */
+function bubbleWidthByText(
+  text: string,
+  {
+    min = 72,     // ✅ 짧은 말풍선도 작게
+    max = 520,
+    padding = 28, // .bubble 좌우 패딩(12px + 14px) 합과 맞춤
+    font = MEASURE_FONT,
+  }: { min?: number; max?: number; padding?: number; font?: string } = {}
+) {
+  const raw = measureTextPx(text?.trim?.() ?? "", font) + padding;
+  return Math.max(min, Math.min(raw, max));
 }
 
 export default function ChattingPage() {
@@ -166,7 +205,7 @@ export default function ChattingPage() {
   const startBotReply = async (userText: string) => {
     const botId = crypto.randomUUID();
 
-    // 1) 우선 빈 assistant 메시지를 추가해두고
+    // 1) 우선 빈 assistant 메시지를 추가
     setSessions((prev) => {
       const next = prev.map((s) =>
         s.id === activeId
@@ -458,7 +497,13 @@ export default function ChattingPage() {
               alt="아우래요 마스코트"
               draggable={false}
             />
-            <p className="bubble a">
+            <p
+              className="bubble a"
+              style={{
+                width: bubbleWidthByText(text), // ✅ 입력 길이에 따라 실측 기반 폭
+                maxWidth: "90vw",
+              }}
+            >
               안녕하세요, 서울시립대학교 AI, 이루매에요😀
               <br />
               궁금한 점을 질문해주세요!
@@ -470,12 +515,17 @@ export default function ChattingPage() {
           {active.messages.map((m, i) => {
             const isAssistant = m.role === "assistant";
             const showAvatar = isAssistant && i === 0;
+
+            // ✅ 실제 텍스트 폭 기반(역할별 min/max 튜닝 가능)
+            const bubbleW = bubbleWidthByText(m.text, {
+              min: isAssistant ? 72 : 68,
+              max: isAssistant ? 520 : 480,
+            });
+
             return (
               <div
                 key={m.id}
-                className={`msg-row ${
-                  isAssistant ? "left" : "right"
-                } msg-enter`}
+                className={`msg-row ${isAssistant ? "left" : "right"} msg-enter`}
               >
                 {showAvatar && (
                   <img
@@ -485,7 +535,12 @@ export default function ChattingPage() {
                     draggable={false}
                   />
                 )}
-                <p className={`bubble ${isAssistant ? "a" : "u"}`}>{m.text}</p>
+                <p
+                  className={`bubble ${isAssistant ? "a" : "u"}`}
+                  style={{ width: bubbleW, maxWidth: "90vw" }}
+                >
+                  {m.text}
+                </p>
               </div>
             );
           })}
@@ -493,7 +548,7 @@ export default function ChattingPage() {
           {/* 타이핑 인디케이터 */}
           {isTyping && (
             <div className="msg-row left msg-enter">
-              <p className="bubble a typing">
+              <p className="bubble a typing" style={{ width: 180 }}>
                 <span className="dots">
                   <i></i>
                   <i></i>
