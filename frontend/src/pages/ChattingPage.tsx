@@ -53,6 +53,7 @@ async function generateBotReply(
 }
 
 /** 한 글자씩 출력하는 타이핑 효과 */
+// 한 글자씩 출력하는 타이핑 효과
 function typeOut({
   full,
   step = 18, // 숫자 높일수록 느림(12~24 권장)
@@ -70,13 +71,16 @@ function typeOut({
     onUpdate(full.slice(0, i));
     if (i < full.length) {
       const jitter = Math.random() * 60;
-      setTimeout(tick, step + jitter);
+      setTimeout(tick, step + jitter); // 타이핑 속도에 조절을 둬서 부드럽게 진행
     } else {
       onDone();
     }
   };
-  setTimeout(tick, 450 + Math.random() * 250); // 시작 전 “생각” 딜레이
+
+  // 처음부터 부드럽게 시작
+  setTimeout(tick, 450 + Math.random() * 250); // 시작 전 짧은 딜레이 추가
 }
+
 
 /* =========================
    ✅ 실측 기반 말풍선 폭 계산
@@ -107,8 +111,8 @@ function measureTextPx(text: string, font = MEASURE_FONT): number {
 function bubbleWidthByText(
   text: string,
   {
-    min = 72,     // ✅ 짧은 말풍선도 작게
-    max = 520,
+    min = 300,     // ✅ 짧은 말풍선도 작게
+    max = 700,
     padding = 28, // .bubble 좌우 패딩(12px + 14px) 합과 맞춤
     font = MEASURE_FONT,
   }: { min?: number; max?: number; padding?: number; font?: string } = {}
