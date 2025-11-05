@@ -118,7 +118,7 @@ def get_course_info(api_key, year, term, subject_no, dvcl_no):
         f.write(result_text)
     return result_text
 
-# 건물강의실조회
+# 건물강의실조회 => 장소 DB에 입력
 def get_building_room_info(apiKey):
     url = "https://wise.uos.ac.kr/COM/ApiBldg/list.do"
     params = {
@@ -257,7 +257,7 @@ def search_subject(api_key, year, term, subject_nm, subject_no='', dvcl_no='', s
 
     return result_text
 
-# 시간표조회 => 사용안할 듯
+# 시간표조회 => 시간표 DB에 입력
 def get_timetable(api_key, year, term):
     url = 'https://wise.uos.ac.kr/COM/ApiTimeTable/list.do'
     params = {

@@ -5,23 +5,6 @@ import os
 # OpenAI 클라이언트 초기화
 client_openai = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
-# 코사인 유사도 함수
-import math
-
-def cos_sim(arr1, arr2):
-  if len(arr1) == len(arr2):
-    dots = 0
-    norm1 = 0
-    norm2 = 0
-    for i in range(len(arr1)):
-      norm1 += (arr1[i])**2
-      norm2 += (arr2[i])**2
-      dots += arr1[i]*arr2[i]
-    return dots/(math.sqrt(norm1*norm2))
-  else:
-    print(f"ERR! LENGTH NOT MATCH | arr1 => {len(arr1)} arr2 => {arr2}")
-    return 0
-
 # OpenAI 임베딩 함수
 def get_embedding(text):
     response = client_openai.embeddings.create(
@@ -31,7 +14,7 @@ def get_embedding(text):
     return response.data[0].embedding
 
 # 파일 읽기 - 각 항목 구분 후 리스트 반환
-def load_timetable_file(filepath):
+def load_building_room_file(filepath):
     with open(filepath, "r", encoding="utf-8") as f:
         content = f.read()
     raw_records = content.split("-" * 40)
@@ -47,30 +30,27 @@ def parse_record(record):
             data[key.strip()] = val.strip()
     return data
 
-# 문서, 메타데이터, 고유 id 만들기
+# 문서, 메타데이터, 고유 id 만들기 (장소 정보용)
 def build_collections(records):
     documents = []
     metadatas = []
     ids = []
-    
+
     for rec in records:
         data = parse_record(rec)
+        # 장소 관련 요약 문장, 자연어화
         doc_text = (
-            f"{data.get('학년도', '')}년 {data.get('학기', '')} "
-            f"{data.get('교과구분', '')} 과목 '{data.get('교과목명', '')}' 분반 {data.get('분반번호', '')}, "
-            f"{data.get('학년', '')}학년 대상. 담당교수: {data.get('담당교수명', '')}. "
-            f"강의시간: {data.get('강의시간 및 강의실', '')}. 학점 {data.get('학점', '')}점."
+            f"{data.get('분반번호(공간명)', '')}, "
+            f"{data.get('건물이름', '')} {data.get('강의실명', '')}에 있습니다."
         )
         documents.append(doc_text)
         metadatas.append(data)
-        
-        year = data.get("학년도", "")
-        term = data.get("학기", "").replace("학기", "")
-        subject_no = data.get("교과목번호", "")
-        dvcl_no = data.get("분반번호", "")
-        id_str = f"timetable-{year}-{term}-{subject_no}-{dvcl_no}"
+        # 고유 ID: 건물코드-강의실코드
+        bldg_cd = data.get('건물코드', '')
+        room_cd = data.get('강의실코드', '')
+        id_str = f"location-{bldg_cd}-{room_cd}"
         ids.append(id_str)
-    
+
     return documents, metadatas, ids
 
 # 배치 단위로 데이터 추가 함수 (OpenAI 임베딩 사용, batch_size=10)
@@ -80,11 +60,9 @@ def batch_add(collection, documents, metadatas, ids, batch_size=10):
         batch_docs = documents[i:i+batch_size]
         batch_meta = metadatas[i:i+batch_size]
         batch_ids = ids[i:i+batch_size]
-        
-        # OpenAI 임베딩 생성 (유사도 주석처리)
+
+        # OpenAI 임베딩 생성
         embeddings = [get_embedding(doc) for doc in batch_docs]
-        
-        # print(cos_sim(embeddings[0], embeddings[1]))
 
         collection.add(
             documents=batch_docs,
@@ -99,18 +77,18 @@ def main():
     # ChromaDB 서버 연결
     client = chromadb.HttpClient(host='chat-irumae.kro.kr', port=8000, ssl=True)
     print("ChromaDB 서버에 성공적으로 연결되었습니다.")
-    
+
     collection_name = "SpringAiCollection"
     collection = client.get_or_create_collection(name=collection_name)
     print(f"'{collection_name}' 컬렉션을 준비했습니다.")
-    
-    # 텍스트 파일 로드, 파싱
-    records = load_timetable_file("timetable_info.txt")
+
+    # 텍스트 파일 로드, 파싱 (장소 파일로 변경)
+    records = load_building_room_file("building_room_info.txt")
     documents, metadatas, ids = build_collections(records)
-    
+
     # 배치 단위로 데이터 추가
     batch_add(collection, documents, metadatas, ids, batch_size=10)
-    
+
     print(f"총 {len(documents)}개의 문서를 컬렉션에 저장 완료.")
 
 if __name__ == "__main__":
