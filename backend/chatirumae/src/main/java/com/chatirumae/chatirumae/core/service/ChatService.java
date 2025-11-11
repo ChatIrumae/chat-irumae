@@ -19,14 +19,18 @@ public class ChatService {
     private final VectorStore vectorStore;
     private final GptApi gptApi;
     private final ChatHistoryService chatHistoryService;
+    private final RedisQuestionCacheService redisCacheService;
 
     @Value("${chromadb.collection.name}")
     private String collectionName;
 
-    public ChatService(VectorStore vectorStore, ChatGptApi gptApi, ChatHistoryService chatHistoryService) {
+    public ChatService(VectorStore vectorStore, ChatGptApi gptApi, 
+                      ChatHistoryService chatHistoryService,
+                      RedisQuestionCacheService redisCacheService) {
         this.vectorStore = vectorStore;
         this.gptApi = gptApi;
         this.chatHistoryService = chatHistoryService;
+        this.redisCacheService = redisCacheService;
     }
 
     public List<ChatHistorySummary> getHistory(String userId) {
@@ -67,6 +71,23 @@ public class ChatService {
             // 사용자 메시지를 ChatHistory에 추가 (없으면 새로 생성)
             // sender를 userId로 사용
             chatHistoryService.addMessageToChatHistory(currentChatId, sender, userMessage, sender);
+
+            // Redis 캐시에서 유사한 질문 검색
+            try {
+                System.out.println("=== Redis 캐시에서 유사한 질문 검색 시작 ===");
+                String cachedAnswer = redisCacheService.findSimilarQuestion(userMessage, sender);
+                if (cachedAnswer != null) {
+                    System.out.println("캐시에서 답변을 찾았습니다!");
+                    // 캐시된 답변을 ChatHistory에 추가
+                    chatHistoryService.addMessageToChatHistory(currentChatId, sender, cachedAnswer, "assistant");
+                    return cachedAnswer;
+                }
+                System.out.println("캐시에서 유사한 질문을 찾지 못했습니다.");
+            } catch (Exception cacheError) {
+                System.err.println("Redis 캐시 검색 중 오류 발생: " + cacheError.getMessage());
+                cacheError.printStackTrace();
+                System.out.println("캐시 오류를 무시하고 계속 진행합니다.");
+            }
 
             // VectorStore 검색 시도
             try {
@@ -126,6 +147,15 @@ public class ChatService {
                     // AI 응답 메시지를 ChatHistory에 추가
                     chatHistoryService.addMessageToChatHistory(currentChatId, sender, response, "assistant");
                     
+                    // Redis 캐시에 질문-답변 저장 (임베딩 포함)
+                    try {
+                        redisCacheService.cacheQuestionAnswer(userMessage, response, sender);
+                        System.out.println("질문-답변을 Redis 캐시에 저장했습니다.");
+                    } catch (Exception cacheError) {
+                        System.err.println("Redis 캐시 저장 중 오류 발생: " + cacheError.getMessage());
+                        // 캐시 저장 실패는 무시하고 계속 진행
+                    }
+                    
                     return response;
                 } else {
                     System.out.println("유사한 문서를 찾지 못했습니다. 컨텍스트 없이 GPT API를 호출합니다.");
@@ -144,6 +174,13 @@ public class ChatService {
                 
                 // AI 응답 메시지를 ChatHistory에 추가
                 chatHistoryService.addMessageToChatHistory(currentChatId, sender, response, "assistant");
+                
+                // Redis 캐시에 질문-답변 저장 (임베딩 포함)
+                try {
+                    redisCacheService.cacheQuestionAnswer(userMessage, response, sender);
+                } catch (Exception cacheError) {
+                    System.err.println("Redis 캐시 저장 중 오류 발생: " + cacheError.getMessage());
+                }
                 
                 return response;
             } catch (Exception gptError) {
