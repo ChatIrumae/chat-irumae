@@ -63,10 +63,7 @@ public class ChatService {
 
     public String getResponse(String userMessage, Date date, String currentChatId, String sender) {
         try {
-            System.out.println("사용자 메시지: " + userMessage);
-            System.out.println("사용자 메시지: " + date);
-            System.out.println("사용자 메시지: " + currentChatId);
-            System.out.println("사용자 메시지: " + sender);
+            System.out.println("사용자 메시지: " + userMessage + date + currentChatId + sender);
 
             // 사용자 메시지를 ChatHistory에 추가 (없으면 새로 생성)
             // sender를 userId로 사용
@@ -92,9 +89,6 @@ public class ChatService {
             // VectorStore 검색 시도
             try {
                 System.out.println("=== VectorStore 검색 시작 ===");
-                System.out.println("VectorStore에서 유사한 문서를 검색합니다...");
-                System.out.println("사용자 메시지: " + userMessage);
-                System.out.println("사용자 메시지 길이: " + userMessage.length());
 
 //                SearchRequest request = SearchRequest.query(userMessage)
 //                        .withTopK(5) // (선택) 최대 5개의 문서를 가져옵니다.
