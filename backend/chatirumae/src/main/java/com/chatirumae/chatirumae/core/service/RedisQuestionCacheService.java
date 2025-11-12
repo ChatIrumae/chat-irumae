@@ -101,8 +101,7 @@ public class RedisQuestionCacheService {
             // 전역 질문 목록에 추가 (모든 사용자의 질문 검색을 위해)
             redisTemplate.opsForSet().add(ALL_QUESTIONS_KEY, cacheKey);
             redisTemplate.expire(ALL_QUESTIONS_KEY, CACHE_TTL_HOURS, TimeUnit.HOURS);
-            
-            System.out.println("질문-답변 캐시 저장 완료: " + cacheKey);
+
         } catch (Exception e) {
             System.err.println("질문-답변 캐시 저장 중 오류 발생: " + e.getMessage());
             e.printStackTrace();
@@ -117,8 +116,6 @@ public class RedisQuestionCacheService {
      */
     public String findSimilarQuestion(String question, String userId) {
         try {
-            System.out.println("유사한 질문 검색 시작 (전체 검색): " + question);
-            
             // 현재 질문의 임베딩 생성
             List<Double> questionEmbedding = generateEmbedding(question);
             

@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class ChatService {
@@ -23,6 +24,12 @@ public class ChatService {
 
     @Value("${chromadb.collection.name}")
     private String collectionName;
+    
+    @Value("${chat.vectorstore.top-k:5}")
+    private int vectorStoreTopK;
+    
+    @Value("${chat.vectorstore.similarity-threshold:0.7}")
+    private double vectorStoreSimilarityThreshold;
 
     public ChatService(VectorStore vectorStore, ChatGptApi gptApi, 
                       ChatHistoryService chatHistoryService,
@@ -71,7 +78,6 @@ public class ChatService {
 
             // Redis 캐시에서 유사한 질문 검색
             try {
-                System.out.println("=== Redis 캐시에서 유사한 질문 검색 시작 ===");
                 String cachedAnswer = redisCacheService.findSimilarQuestion(userMessage, sender);
                 if (cachedAnswer != null) {
                     System.out.println("캐시에서 답변을 찾았습니다!");
@@ -88,27 +94,24 @@ public class ChatService {
 
             // VectorStore 검색 시도
             try {
-                System.out.println("=== VectorStore 검색 시작 ===");
+                System.out.println("검색 설정: TopK=" + vectorStoreTopK + ", 유사도 임계값=" + vectorStoreSimilarityThreshold);
 
-//                SearchRequest request = SearchRequest.query(userMessage)
-//                        .withTopK(5) // (선택) 최대 5개의 문서를 가져옵니다.
-//                        .withSimilarityThreshold(0.7); // (핵심) 유사도 0.7 이상인 문서만 필터링합니다.
+                // SearchRequest를 사용하여 명시적으로 검색 조건 설정
+                SearchRequest request = SearchRequest.query(userMessage)
+                        .withTopK(vectorStoreTopK) // 최대 반환할 문서 수
+                        .withSimilarityThreshold(vectorStoreSimilarityThreshold); // 유사도 임계값 (이 값 이상인 문서만 반환)
 
-                // Embedding 테스트를 위한 간단한 검색
                 System.out.println("Embedding을 통한 유사도 검색을 시작합니다...");
-                List<Document> similarDocuments = vectorStore.similaritySearch(userMessage);
+                List<Document> similarDocuments = vectorStore.similaritySearch(request);
                 
                 if (similarDocuments != null && !similarDocuments.isEmpty()) {
-                    System.out.println("검색된 문서 수: " + similarDocuments.size());
-
                     StringBuilder contextBuilder = new StringBuilder();
 
                     for (int i = 0; i < similarDocuments.size(); i++) {
                         Document document = similarDocuments.get(i);
                         String content = document.getContent(); // 문서 내용 가져오기
+                        String metadata = document.getMetadata().toString();
 
-                        System.out.println("문서 " + (i + 1) + ":");
-                        // getContent() 메서드로 문서 내용을 가져옵니다.
                         System.out.println(document.getContent());
 
                         contextBuilder.append("--- 참고 문서 " + (i + 1) + " ---\n");
@@ -133,7 +136,7 @@ public class ChatService {
                     [답변]
                     """;
                     String context = contextBuilder.toString();
-                    String finalPrompt = finalPrompt = String.format(RAG_PROMPT_TEMPLATE, context, userMessage);
+                    String finalPrompt = String.format(RAG_PROMPT_TEMPLATE, context, userMessage);
 
                     // 컨텍스트와 함께 GPT API 호출
                     String response = gptApi.generateResponse(finalPrompt, List.of(Collections.singletonList(context))).block();
@@ -143,8 +146,11 @@ public class ChatService {
                     
                     // Redis 캐시에 질문-답변 저장 (임베딩 포함)
                     try {
-                        redisCacheService.cacheQuestionAnswer(userMessage, response, sender);
-                        System.out.println("질문-답변을 Redis 캐시에 저장했습니다.");
+                        if(!Objects.equals(response, "죄송합니다, 관련 정보를 찾을 수 없습니다.")){
+                            redisCacheService.cacheQuestionAnswer(userMessage, response, sender);
+                            System.out.println("질문-답변을 Redis 캐시에 저장했습니다.");
+                        }
+
                     } catch (Exception cacheError) {
                         System.err.println("Redis 캐시 저장 중 오류 발생: " + cacheError.getMessage());
                         // 캐시 저장 실패는 무시하고 계속 진행
@@ -168,13 +174,7 @@ public class ChatService {
                 
                 // AI 응답 메시지를 ChatHistory에 추가
                 chatHistoryService.addMessageToChatHistory(currentChatId, sender, response, "assistant");
-                
-                // Redis 캐시에 질문-답변 저장 (임베딩 포함)
-                try {
-                    redisCacheService.cacheQuestionAnswer(userMessage, response, sender);
-                } catch (Exception cacheError) {
-                    System.err.println("Redis 캐시 저장 중 오류 발생: " + cacheError.getMessage());
-                }
+
                 
                 return response;
             } catch (Exception gptError) {
