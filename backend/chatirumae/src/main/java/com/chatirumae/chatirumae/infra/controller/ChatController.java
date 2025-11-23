@@ -4,6 +4,8 @@ import com.chatirumae.chatirumae.core.model.ChatHistory;
 import com.chatirumae.chatirumae.core.model.ChatHistorySummary;
 import com.chatirumae.chatirumae.core.service.ChatService;
 import com.chatirumae.chatirumae.core.service.HealthCheckService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,6 +19,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api")
 public class ChatController {
+    private static final Logger logger = LoggerFactory.getLogger(ChatController.class);
     private final ChatService chatService;
     private final HealthCheckService healthCheckService;
 
@@ -27,6 +30,8 @@ public class ChatController {
 
     @PostMapping("/chat")
     public String chat(@RequestBody ChatRequestDto requestDto) {
+        long startTime = System.currentTimeMillis();
+        
         // DTO 객체를 통해 깔끔하게 메시지 내용에 접근 가능
         String userMessage = requestDto.getContent();
         Date timestamp = requestDto.getTimestamp();
@@ -39,6 +44,10 @@ public class ChatController {
         // 주입받은 ChatService를 사용하여 비즈니스 로직 처리
         // sender를 userId로 사용
         String responseMessage = chatService.getResponse(userMessage, timestamp, currentChatId, sender);
+
+        long endTime = System.currentTimeMillis();
+        long responseTime = endTime - startTime;
+        logger.info("Chat API 응답 시간: {}ms (사용자: {}, 채팅ID: {})", responseTime, sender, currentChatId);
 
         return responseMessage; // 실제 응답 반환
     }
