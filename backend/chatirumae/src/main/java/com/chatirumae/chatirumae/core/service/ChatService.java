@@ -4,6 +4,7 @@ import com.chatirumae.chatirumae.core.interfaces.GptApi;
 import com.chatirumae.chatirumae.core.model.ChatHistory;
 import com.chatirumae.chatirumae.core.model.ChatHistorySummary;
 import com.chatirumae.chatirumae.infra.ChatGptApi;
+import com.chatirumae.chatirumae.infra.TavilyApi;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -19,6 +20,7 @@ import java.util.Objects;
 public class ChatService {
     private final VectorStore vectorStore;
     private final GptApi gptApi;
+    private final TavilyApi tavilyApi;
     private final ChatHistoryService chatHistoryService;
     private final RedisQuestionCacheService redisCacheService;
 
@@ -32,10 +34,12 @@ public class ChatService {
     private double vectorStoreSimilarityThreshold;
 
     public ChatService(VectorStore vectorStore, ChatGptApi gptApi, 
+                      TavilyApi tavilyApi,
                       ChatHistoryService chatHistoryService,
                       RedisQuestionCacheService redisCacheService) {
         this.vectorStore = vectorStore;
         this.gptApi = gptApi;
+        this.tavilyApi = tavilyApi;
         this.chatHistoryService = chatHistoryService;
         this.redisCacheService = redisCacheService;
     }
@@ -92,6 +96,11 @@ public class ChatService {
                 System.out.println("캐시 오류를 무시하고 계속 진행합니다.");
             }
 
+            //Tavily API 호출 test
+            String test_message = "서울시립대학교 교양 과목 A+ 비율 성적 평가 기준 학사 규정";
+            String tavily_response = tavilyApi.search(test_message).block();
+            System.out.println("Tavily Response: " + tavily_response);
+
             // VectorStore 검색 시도
             try {
                 System.out.println("검색 설정: TopK=" + vectorStoreTopK + ", 유사도 임계값=" + vectorStoreSimilarityThreshold);
@@ -140,7 +149,7 @@ public class ChatService {
 
                     // 컨텍스트와 함께 GPT API 호출
                     String response = gptApi.generateResponse(finalPrompt, List.of(Collections.singletonList(context))).block();
-                    
+
                     // AI 응답 메시지를 ChatHistory에 추가
                     chatHistoryService.addMessageToChatHistory(currentChatId, sender, response, "assistant");
                     
