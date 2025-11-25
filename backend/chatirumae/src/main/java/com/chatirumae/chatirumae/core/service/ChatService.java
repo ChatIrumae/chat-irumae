@@ -224,11 +224,42 @@ public class ChatService {
                 
             //     return errorResponse;
             // }
+
             return response;
         } catch (Exception e) {
             System.err.println("Error in ChatService.getResponse: " + e.getMessage());
             e.printStackTrace();
             return "죄송합니다. 현재 서비스에 문제가 발생했습니다. 잠시 후 다시 시도해주세요.";
+        }
+    }
+
+    public void predict(String userMessage, String responseMessage, Date timestamp, String currentChatId, String sender) {
+        // TODO 일단 1개만 예측
+        // TODO FAILED FILTERING
+        final String PREDICT_PROMPT_TEMPLATE = """
+                    당신은 서울시립대학교 LLM 챗봇 어시스턴트입니다.
+                    이전 사용자의 질문과 답변을 참고해서, 다음에 사용자가 물어볼 질문 %s개를 미리 예측해줘.
+                    이전 사용자의 질문: %s
+                    이전 사용자의 답변: %s
+                    답변형식:
+                    - 한국어로 답변
+                    - 부가 정보를 제외하고, 질문의 내용만 답변
+                    """;
+        String prompt = String.format(PREDICT_PROMPT_TEMPLATE, 1, userMessage, responseMessage);
+        String predictedQuestion = gptApi.generatePrediction(prompt).block();
+        try{
+            String answer = getResponse(predictedQuestion, timestamp, currentChatId, sender);
+            if (answer == null || answer.isEmpty() || answer.equals("FAILED")) {
+                throw new Exception("Answer is null or empty or failed");
+            }
+            System.out.println("");
+            System.out.println("PREDICT");
+            System.out.println("Predicted Question: " + predictedQuestion);
+            System.out.println("Answer: " + answer);
+            redisCacheService.cacheQuestionAnswer(predictedQuestion, answer, sender);
+        } catch (Exception e) {
+            System.err.println("Error in ChatService.predict: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }

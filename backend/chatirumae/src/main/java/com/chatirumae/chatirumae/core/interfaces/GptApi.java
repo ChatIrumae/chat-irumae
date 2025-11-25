@@ -7,4 +7,5 @@ import java.util.List;
 public interface GptApi {
     Mono<String> generateResponse(String prompt, List<List<String>> documents);
     Mono<String> generateQuery(String prompt);
+    Mono<String> generatePrediction(String prompt);
 }

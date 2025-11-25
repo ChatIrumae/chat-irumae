@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import java.util.concurrent.CompletableFuture;
 
 import java.util.Date;
 import java.util.List;
@@ -39,7 +40,10 @@ public class ChatController {
         // 주입받은 ChatService를 사용하여 비즈니스 로직 처리
         // sender를 userId로 사용
         String responseMessage = chatService.getResponse(userMessage, timestamp, currentChatId, sender);
-
+        CompletableFuture.runAsync(() -> {
+            chatService.predict(userMessage, responseMessage, timestamp, currentChatId, sender);
+        });
+    
         return responseMessage; // 실제 응답 반환
     }
 
