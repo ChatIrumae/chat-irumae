@@ -11,6 +11,7 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.chatirumae.chatirumae.core.util.PromptUtil;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -74,25 +75,30 @@ public class ChatService {
 
     public String getResponse(String userMessage, Date date, String currentChatId, String sender) {
         try {
-            System.out.println("사용자 메시지: " + userMessage + date + currentChatId + sender);
+            System.out.println("사용자 질문: " + userMessage);
 
             // 사용자 메시지를 ChatHistory에 추가 (없으면 새로 생성)
             // sender를 userId로 사용
             chatHistoryService.addMessageToChatHistory(currentChatId, sender, userMessage, sender);
+            System.out.println("");
+
 
             // Tavily Query 생성
+            System.out.println("QUERY");
+            
             String searchQuery = null;
             try {
-                final String TAVILY_QUERY_PROMPT_TEMPLATE = "사용자 질문을 Tavily Web Search API에 사용할 쿼리 문장(한국어)으로 바꿔줘\n문맥: 서울시립대학교 LLM 챗봇 사용자를 대상으로 한 서비스\n답변형식:\n- '서울시립대학교' 포함\n- 필수 키워드 사용\n- 간결하게\n사용자 질문: %s\n쿼리: \n";
-                String searchPrompt = String.format(TAVILY_QUERY_PROMPT_TEMPLATE, userMessage);
-                System.out.println("Search Prompt: " + searchPrompt);
+                final String searchPrompt = PromptUtil.getTavilyQueryPrompt(userMessage);
                 searchQuery = gptApi.generateQuery(searchPrompt).block();
-                System.out.println("Search Query: " + searchQuery);
+                System.out.println("Query: " + searchQuery);
             } catch (Exception gptError) {
                 System.err.println("GPT API 호출 중 오류 발생: " + gptError.getMessage());
                 gptError.printStackTrace();
             }
+            System.out.println("");
 
+
+            System.out.println("CACHE");
             // Redis 캐시에서 유사한 질문 검색
             try {
                 String cachedAnswer = redisCacheService.findSimilarQuestion(userMessage, sender);
@@ -108,8 +114,10 @@ public class ChatService {
                 cacheError.printStackTrace();
                 System.out.println("캐시 오류를 무시하고 계속 진행합니다.");
             }
+            System.out.println("");
 
             // Web Search
+            System.out.println("WEB_SEARCH");
             String referDocuments = null;
             try {
                 referDocuments = tavilyApi.search(searchQuery).block();
@@ -117,27 +125,19 @@ public class ChatService {
                 System.err.println("Tavily API 호출 중 오류 발생: " + tavilyError.getMessage());
                 tavilyError.printStackTrace();
             }
-
+            System.out.println("Tavily API 호출 완료: " + referDocuments);
             System.out.println("");
-            System.out.println("RESPONSE");
+
             // GPT Response
+            System.out.println("ANSWER");
             String response = null;
             try {
-                 final String RAG_PROMPT_TEMPLATE = """
-                    당신은 서울시립대학교 LLM 챗봇 어시스턴트입니다.
-                    주어진 '참고 정보(컨텍스트)'를 바탕으로 사용자의 '질문'에 대해 답변해야 합니다.
-                    답변은 반드시 '참고 정보'에 근거해야 하며, 정보에 없는 내용은 답변하지 마세요.
-                    '참고 정보'에서 답변을 찾을 수 없다면, "죄송합니다, 관련 정보를 찾을 수 없습니다."라고 답변하세요.
-                    사용자가 어색하지 않게 친근한 말투로 정보를 잘 정리해서 답변하세요.                
-                    [참고 정보]
-                    %s
-                
-                    [사용자 질문]
-                    %s
-                
-                    [답변]
-                    """;
-                    response = gptApi.generateQuery(String.format(RAG_PROMPT_TEMPLATE, referDocuments, userMessage)).block();
+                    final String ragPrompt = PromptUtil.getRagPrompt(referDocuments, userMessage);
+                    response = gptApi.generateQuery(ragPrompt).block();
+                    if (!response.isEmpty() && !response.equals("죄송합니다, 관련 정보를 찾을 수 없습니다.")) {
+                        //TODO GLOBAL CACHE
+                        redisCacheService.cacheQuestionAnswer(userMessage, response, sender);
+                    }
                     System.out.println("Response: " + response);
             } catch (Exception gptError) {
                 System.err.println("GPT API 호출 중 오류 발생: " + gptError.getMessage());
@@ -234,28 +234,18 @@ public class ChatService {
     }
 
     public void predict(String userMessage, String responseMessage, Date timestamp, String currentChatId, String sender) {
-        // TODO 일단 1개만 예측
-        // TODO FAILED FILTERING
-        final String PREDICT_PROMPT_TEMPLATE = """
-                    당신은 서울시립대학교 LLM 챗봇 어시스턴트입니다.
-                    이전 사용자의 질문과 답변을 참고해서, 다음에 사용자가 물어볼 질문 %s개를 미리 예측해줘.
-                    이전 사용자의 질문: %s
-                    이전 사용자의 답변: %s
-                    답변형식:
-                    - 한국어로 답변
-                    - 부가 정보를 제외하고, 질문의 내용만 답변
-                    """;
-        String prompt = String.format(PREDICT_PROMPT_TEMPLATE, 1, userMessage, responseMessage);
+        final String prompt = PromptUtil.getPredictPrompt(1, userMessage, responseMessage);
         String predictedQuestion = gptApi.generatePrediction(prompt).block();
         try{
             String answer = getResponse(predictedQuestion, timestamp, currentChatId, sender);
-            if (answer == null || answer.isEmpty() || answer.equals("FAILED")) {
+            if (answer == null || answer.isEmpty() || answer.equals("죄송합니다, 관련 정보를 찾을 수 없습니다.")) {
                 throw new Exception("Answer is null or empty or failed");
             }
             System.out.println("");
             System.out.println("PREDICT");
             System.out.println("Predicted Question: " + predictedQuestion);
             System.out.println("Answer: " + answer);
+            //TODO LOCAL CACHE
             redisCacheService.cacheQuestionAnswer(predictedQuestion, answer, sender);
         } catch (Exception e) {
             System.err.println("Error in ChatService.predict: " + e.getMessage());
