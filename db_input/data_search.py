@@ -27,7 +27,7 @@ import requests
 import pandas as pd
 from io import BytesIO
 
-def crawled_excel(url = 'https://www.uos.ac.kr/common/board-download.do?listId=CA2&seq=100&fSeq=1'):
+def crawled_excel(url):
     response = requests.get(url, headers=headers)
     response.raise_for_status()
 
@@ -46,7 +46,7 @@ import requests
 import olefile
 from io import BytesIO
 
-def crawled_hwp(url = 'https://blog.kakaocdn.net/dna/ISFm3/btsHA3oerTg/AAAAAAAAAAAAAAAAAAAAAAhkUIkWvmoNeaEakmx5wAtbVqd3CmelBIZPbwAlO-Wk/%EB%B3%B4%EA%B3%A0%EC%84%9C%20%EC%96%91%EC%8B%9D.hwp?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1761922799&allow_ip=&allow_referer=&signature=ccqm0PrWZCp5%2FCdOkrDnKY3X1io%3D&attach=1&knm=tfile.hwp'):
+def crawled_hwp(url):
     response = requests.get(url, headers=headers)
     response.raise_for_status()
 

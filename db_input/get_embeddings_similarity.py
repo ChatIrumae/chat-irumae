@@ -35,6 +35,7 @@ def save_similarity_results(ids, embeddings, output_file="similarity_results.txt
     with open(output_file, "w", encoding="utf-8") as f:
         for id1, id2, sim in sim_results:
             f.write(f"{id1} | {id2} | similarity: {sim}\n")
+            print(f"{id1} | {id2} | similarity: {sim}")
     print(f"총 {len(sim_results)}개의 쌍 유사도 값을 '{output_file}'에 저장했습니다.")
 
 ### 사용 예시
