@@ -101,14 +101,15 @@ public class ChatService {
             System.out.println("CACHE");
             // Redis 캐시에서 유사한 질문 검색
             try {
-                String cachedAnswer = redisCacheService.findSimilarQuestion(userMessage, sender);
+                System.out.println("Cache와 대조할 질문: " + searchQuery);
+                String cachedAnswer = redisCacheService.findSimilarQuestion(searchQuery, sender);
                 if (cachedAnswer != null) {
-                    System.out.println("캐시에서 답변을 찾았습니다!");
+                    System.out.println("----CACHE HIT!!----");
                     // 캐시된 답변을 ChatHistory에 추가
                     chatHistoryService.addMessageToChatHistory(currentChatId, sender, cachedAnswer, "assistant");
                     return cachedAnswer;
                 }
-                System.out.println("캐시에서 유사한 질문을 찾지 못했습니다.");
+                System.out.println("----CACHE MISS!!----");
             } catch (Exception cacheError) {
                 System.err.println("Redis 캐시 검색 중 오류 발생: " + cacheError.getMessage());
                 cacheError.printStackTrace();
@@ -125,7 +126,7 @@ public class ChatService {
                 System.err.println("Tavily API 호출 중 오류 발생: " + tavilyError.getMessage());
                 tavilyError.printStackTrace();
             }
-            System.out.println("Tavily API 호출 완료: " + referDocuments);
+            System.out.println("Tavily API 호출 완료: " + referDocuments.substring(0, 300) + "...");
             System.out.println("");
 
             // GPT Response
@@ -136,13 +137,15 @@ public class ChatService {
                     response = gptApi.generateQuery(ragPrompt).block();
                     if (!response.isEmpty() && !response.equals("죄송합니다, 관련 정보를 찾을 수 없습니다.")) {
                         //TODO GLOBAL CACHE
-                        redisCacheService.cacheQuestionAnswer(userMessage, response, sender);
+                        redisCacheService.cacheQuestionAnswer(searchQuery, response, sender);
                     }
-                    System.out.println("Response: " + response);
+                    System.out.println("");
+                    System.out.println("chatbot: " + response);
             } catch (Exception gptError) {
                 System.err.println("GPT API 호출 중 오류 발생: " + gptError.getMessage());
                 gptError.printStackTrace();
             }
+            System.out.println("");
 
             // VectorStore 검색 시도
             // try {
@@ -225,7 +228,7 @@ public class ChatService {
             //     return errorResponse;
             // }
 
-            return new String[] {response, searchQuery};
+            return response;
         } catch (Exception e) {
             System.err.println("Error in ChatService.getResponse: " + e.getMessage());
             e.printStackTrace();
@@ -237,9 +240,7 @@ public class ChatService {
         final String prompt = PromptUtil.getPredictPrompt(1, userMessage, responseMessage);
         String predictedQuestion = gptApi.generatePrediction(prompt).block();
         try{
-            String[] response = getResponse(predictedQuestion, timestamp, currentChatId, sender);
-            String answer = response[0];
-            String searchQuery = response[1];
+            String answer = getResponse(predictedQuestion, timestamp, currentChatId, sender);
             if (answer == null || answer.isEmpty() || answer.equals("죄송합니다, 관련 정보를 찾을 수 없습니다.")) {
                 throw new Exception("Answer is null or empty or failed");
             }
@@ -247,8 +248,6 @@ public class ChatService {
             System.out.println("PREDICT");
             System.out.println("Predicted Question: " + predictedQuestion);
             System.out.println("Answer: " + answer);
-            //TODO LOCAL CACHE
-            redisCacheService.cacheQuestionAnswer(searchQuery, answer, sender);
         } catch (Exception e) {
             System.err.println("Error in ChatService.predict: " + e.getMessage());
             e.printStackTrace();

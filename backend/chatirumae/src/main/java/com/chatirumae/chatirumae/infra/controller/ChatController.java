@@ -37,10 +37,9 @@ public class ChatController {
         System.out.println("사용자 메시지: " + userMessage);
         System.out.println("발신자: " + sender);
 
-        // 주입받은 ChatService를 사용하여 비즈니스 로직 처리
-        // sender를 userId로 사용
-        String[] response = chatService.getResponse(userMessage, timestamp, currentChatId, sender);
-        String responseMessage = response[0];
+        System.out.println("");
+        System.out.println("CHAT START");
+        String responseMessage = chatService.getResponse(userMessage, timestamp, currentChatId, sender);
         CompletableFuture.runAsync(() -> {
             chatService.predict(userMessage, responseMessage, timestamp, currentChatId, sender);
         });

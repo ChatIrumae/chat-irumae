@@ -92,8 +92,8 @@ public class ChatHistoryService {
 
     // currentChatId로 ChatHistory 찾아서 메시지 추가 (없으면 새로 생성)
     public ChatHistory addMessageToChatHistory(String currentChatId, String sender, String content, String messageSender) {
-        System.out.println("=== addMessageToChatHistory 시작 ===");
-        System.out.println("sender: " + sender + "," + content + "," + messageSender);
+        // System.out.println("=== addMessageToChatHistory 시작 ===");
+        // System.out.println("sender: " + sender + "," + content + "," + messageSender);
         
         // 먼저 currentChatId로 ChatHistory 찾기
         Optional<ChatHistory> existingChat = chatHistoryRepository.findById(currentChatId);
@@ -152,8 +152,8 @@ public class ChatHistoryService {
         }
         
         ChatHistory savedChatHistory = chatHistoryRepository.save(chatHistory);
-        System.out.println("ChatHistory 저장 완료 - ID: " + savedChatHistory.getId());
-        System.out.println("=== addMessageToChatHistory 종료 ===");
+        // System.out.println("ChatHistory 저장 완료 - ID: " + savedChatHistory.getId());
+        // System.out.println("=== addMessageToChatHistory 종료 ===");
         return savedChatHistory;
     }
 
