@@ -225,7 +225,7 @@ public class ChatService {
             //     return errorResponse;
             // }
 
-            return response;
+            return new String[] {response, searchQuery};
         } catch (Exception e) {
             System.err.println("Error in ChatService.getResponse: " + e.getMessage());
             e.printStackTrace();
@@ -237,7 +237,9 @@ public class ChatService {
         final String prompt = PromptUtil.getPredictPrompt(1, userMessage, responseMessage);
         String predictedQuestion = gptApi.generatePrediction(prompt).block();
         try{
-            String answer = getResponse(predictedQuestion, timestamp, currentChatId, sender);
+            String[] response = getResponse(predictedQuestion, timestamp, currentChatId, sender);
+            String answer = response[0];
+            String searchQuery = response[1];
             if (answer == null || answer.isEmpty() || answer.equals("죄송합니다, 관련 정보를 찾을 수 없습니다.")) {
                 throw new Exception("Answer is null or empty or failed");
             }
@@ -246,7 +248,7 @@ public class ChatService {
             System.out.println("Predicted Question: " + predictedQuestion);
             System.out.println("Answer: " + answer);
             //TODO LOCAL CACHE
-            redisCacheService.cacheQuestionAnswer(predictedQuestion, answer, sender);
+            redisCacheService.cacheQuestionAnswer(searchQuery, answer, sender);
         } catch (Exception e) {
             System.err.println("Error in ChatService.predict: " + e.getMessage());
             e.printStackTrace();

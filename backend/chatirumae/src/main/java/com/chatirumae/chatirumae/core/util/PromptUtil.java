@@ -1,8 +1,13 @@
 package com.chatirumae.chatirumae.core.util;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.ZoneId;
 
 public class PromptUtil {
     public static String getTavilyQueryPrompt(String userMessage) {
+        String date = LocalDate.now(ZoneId.of("Asia/Seoul"))
+            .format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
         return """
 사용자 질문을 Tavily Web Search API에 사용할 쿼리 문장(한국어)으로 바꿔줘
 참고: 서울시립대학교 Chatbot LLM 서비스
@@ -10,9 +15,10 @@ public class PromptUtil {
 - '서울시립대학교' 포함
 - 필수 키워드 사용
 - 간결하게
+날짜: %s
 사용자 질문: %s
 쿼리: 
-""".formatted(userMessage);
+""".formatted(date,userMessage);
     }
 
     public static String getRagPrompt(String referDocuments, String userMessage) {
