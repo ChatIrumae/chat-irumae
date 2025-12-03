@@ -40,4 +40,38 @@ public class ChatGptApi implements GptApi {
                 })
                 .onErrorReturn("OpenAI API 호출 중 오류가 발생했습니다. 다시 시도해주세요.");
     }
+
+    @Override
+    public Mono<String> generateQuery(String prompt) {
+        GptRequestDto requestBody = new GptRequestDto("gpt-3.5-turbo", prompt);
+
+        return openAiWebClient.post()
+                .uri("/v1/chat/completions")
+                .bodyValue(requestBody)
+                .retrieve()
+                .bodyToMono(GptResponseDto.class)
+                .map(response -> {
+                    if (response.getChoices() != null && !response.getChoices().isEmpty()) {
+                        return response.getChoices().get(0).getMessage().getContent();
+                    }
+                    return "죄송합니다. 응답을 생성할 수 없습니다.";
+                })
+                .doOnError(error -> {
+                    System.err.println("GPT API 호출 중 오류가 발생했습니다. " + error.getMessage());
+                    error.printStackTrace();
+                })
+                .onErrorReturn("GPT API 호출 중 오류가 발생했습니다. 다시 시도해주세요.");
+    }
+
+    @Override
+    public Mono<String> generatePrediction(String prompt) {
+        GptRequestDto requestBody = new GptRequestDto("gpt-3.5-turbo", prompt);
+
+        return openAiWebClient.post()
+                .uri("/v1/chat/completions")
+                .bodyValue(requestBody)
+                .retrieve()
+                .bodyToMono(GptResponseDto.class)
+                .map(response -> response.getChoices().get(0).getMessage().getContent());
+    }
 }

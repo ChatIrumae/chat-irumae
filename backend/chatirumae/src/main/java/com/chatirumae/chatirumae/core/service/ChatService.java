@@ -4,12 +4,14 @@ import com.chatirumae.chatirumae.core.interfaces.GptApi;
 import com.chatirumae.chatirumae.core.model.ChatHistory;
 import com.chatirumae.chatirumae.core.model.ChatHistorySummary;
 import com.chatirumae.chatirumae.infra.ChatGptApi;
+import com.chatirumae.chatirumae.infra.TavilyApi;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.chatirumae.chatirumae.core.util.PromptUtil;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -19,6 +21,7 @@ import java.util.Objects;
 public class ChatService {
     private final VectorStore vectorStore;
     private final GptApi gptApi;
+    private final TavilyApi tavilyApi;
     private final ChatHistoryService chatHistoryService;
     private final RedisQuestionCacheService redisCacheService;
 
@@ -32,10 +35,12 @@ public class ChatService {
     private double vectorStoreSimilarityThreshold;
 
     public ChatService(VectorStore vectorStore, ChatGptApi gptApi, 
+                      TavilyApi tavilyApi,
                       ChatHistoryService chatHistoryService,
                       RedisQuestionCacheService redisCacheService) {
         this.vectorStore = vectorStore;
         this.gptApi = gptApi;
+        this.tavilyApi = tavilyApi;
         this.chatHistoryService = chatHistoryService;
         this.redisCacheService = redisCacheService;
     }
@@ -70,31 +75,81 @@ public class ChatService {
 
     public String getResponse(String userMessage, Date date, String currentChatId, String sender) {
         try {
-            System.out.println("사용자 메시지: " + userMessage + date + currentChatId + sender);
+            System.out.println("사용자 질문: " + userMessage);
 
             // 사용자 메시지를 ChatHistory에 추가 (없으면 새로 생성)
             // sender를 userId로 사용
             chatHistoryService.addMessageToChatHistory(currentChatId, sender, userMessage, sender);
+            System.out.println("");
 
+
+            // Tavily Query 생성
+            System.out.println("QUERY");
+            
+            String searchQuery = null;
+            try {
+                final String searchPrompt = PromptUtil.getTavilyQueryPrompt(userMessage);
+                searchQuery = gptApi.generateQuery(searchPrompt).block();
+                System.out.println("Query: " + searchQuery);
+            } catch (Exception gptError) {
+                System.err.println("GPT API 호출 중 오류 발생: " + gptError.getMessage());
+                gptError.printStackTrace();
+            }
+            System.out.println("");
+
+
+            System.out.println("CACHE");
             // Redis 캐시에서 유사한 질문 검색
             try {
-                String cachedAnswer = redisCacheService.findSimilarQuestion(userMessage, sender);
+                System.out.println("Cache와 대조할 질문: " + searchQuery);
+                String cachedAnswer = redisCacheService.findSimilarQuestion(searchQuery, sender);
                 if (cachedAnswer != null) {
-                    System.out.println("캐시에서 답변을 찾았습니다!");
+                    System.out.println("----CACHE HIT!!----");
                     // 캐시된 답변을 ChatHistory에 추가
                     chatHistoryService.addMessageToChatHistory(currentChatId, sender, cachedAnswer, "assistant");
                     return cachedAnswer;
                 }
-                System.out.println("캐시에서 유사한 질문을 찾지 못했습니다.");
+                System.out.println("----CACHE MISS!!----");
             } catch (Exception cacheError) {
                 System.err.println("Redis 캐시 검색 중 오류 발생: " + cacheError.getMessage());
                 cacheError.printStackTrace();
                 System.out.println("캐시 오류를 무시하고 계속 진행합니다.");
             }
+            System.out.println("");
+
+            // Web Search
+            System.out.println("WEB_SEARCH");
+            String referDocuments = null;
+            try {
+                referDocuments = tavilyApi.search(searchQuery).block();
+            } catch (Exception tavilyError) {
+                System.err.println("Tavily API 호출 중 오류 발생: " + tavilyError.getMessage());
+                tavilyError.printStackTrace();
+            }
+            System.out.println("Tavily API 호출 완료: " + referDocuments.substring(0, 300) + "...");
+            System.out.println("");
+
+            // GPT Response
+            System.out.println("ANSWER");
+            String response = null;
+            try {
+                    final String ragPrompt = PromptUtil.getRagPrompt(referDocuments, userMessage);
+                    response = gptApi.generateQuery(ragPrompt).block();
+                    if (!response.isEmpty() && !response.equals("죄송합니다, 관련 정보를 찾을 수 없습니다.")) {
+                        //TODO GLOBAL CACHE
+                        redisCacheService.cacheQuestionAnswer(searchQuery, response, sender);
+                    }
+                    System.out.println("");
+                    System.out.println("chatbot: " + response);
+            } catch (Exception gptError) {
+                System.err.println("GPT API 호출 중 오류 발생: " + gptError.getMessage());
+                gptError.printStackTrace();
+            }
+            System.out.println("");
 
             // VectorStore 검색 시도
-            try {
-                System.out.println("검색 설정: TopK=" + vectorStoreTopK + ", 유사도 임계값=" + vectorStoreSimilarityThreshold);
+            // try {
+            //     System.out.println("검색 설정: TopK=" + vectorStoreTopK + ", 유사도 임계값=" + vectorStoreSimilarityThreshold);
 
                 // SearchRequest.builder()를 사용하여 검색 조건 설정 (Spring AI 1.0.0-M5)
                 SearchRequest request = SearchRequest.builder()
@@ -103,25 +158,25 @@ public class ChatService {
                         .similarityThreshold(vectorStoreSimilarityThreshold) // 유사도 임계값 (이 값 이상인 문서만 반환)
                         .build();
 
-                System.out.println("Embedding을 통한 유사도 검색을 시작합니다...");
-                List<Document> similarDocuments = vectorStore.similaritySearch(request);
+            //     System.out.println("Embedding을 통한 유사도 검색을 시작합니다...");
+            //     List<Document> similarDocuments = vectorStore.similaritySearch(request);
                 
-                if (similarDocuments != null && !similarDocuments.isEmpty()) {
-                    StringBuilder contextBuilder = new StringBuilder();
+            //     if (similarDocuments != null && !similarDocuments.isEmpty()) {
+            //         StringBuilder contextBuilder = new StringBuilder();
 
-                    for (int i = 0; i < similarDocuments.size(); i++) {
-                        Document document = similarDocuments.get(i);
-                        String content = document.getContent(); // 문서 내용 가져오기
-                        String metadata = document.getMetadata().toString();
+            //         for (int i = 0; i < similarDocuments.size(); i++) {
+            //             Document document = similarDocuments.get(i);
+            //             String content = document.getContent(); // 문서 내용 가져오기
+            //             String metadata = document.getMetadata().toString();
 
-                        System.out.println(document.getContent());
+            //             System.out.println(document.getContent());
 
-                        contextBuilder.append("--- 참고 문서 " + (i + 1) + " ---\n");
-                        contextBuilder.append(content);
-                        contextBuilder.append("\n\n"); // 문서 사이에 공백 추가
+            //             contextBuilder.append("--- 참고 문서 " + (i + 1) + " ---\n");
+            //             contextBuilder.append(content);
+            //             contextBuilder.append("\n\n"); // 문서 사이에 공백 추가
 
-                        System.out.println("-------------------------");
-                    }
+            //             System.out.println("-------------------------");
+            //         }
 
                     final String RAG_PROMPT_TEMPLATE = """
                     당신은 유용한 AI 챗봇 어시스턴트입니다.
@@ -167,42 +222,61 @@ public class ChatService {
                         // 캐시 저장 실패는 무시하고 계속 진행
                     }
                     
-                    return response;
-                } else {
-                    System.out.println("유사한 문서를 찾지 못했습니다. 컨텍스트 없이 GPT API를 호출합니다.");
-                }
-            } catch (Exception vectorStoreError) {
-                System.err.println("VectorStore 검색 중 오류 발생: " + vectorStoreError.getMessage());
-                System.err.println("오류 타입: " + vectorStoreError.getClass().getSimpleName());
-                System.err.println("오류 상세: " + vectorStoreError.getCause());
-                vectorStoreError.printStackTrace();
-                System.out.println("VectorStore 오류를 무시하고 직접 GPT API를 호출합니다.");
-            }
+            //         return response;
+            //     } else {
+            //         System.out.println("유사한 문서를 찾지 못했습니다. 컨텍스트 없이 GPT API를 호출합니다.");
+            //     }
+            // } catch (Exception vectorStoreError) {
+            //     System.err.println("VectorStore 검색 중 오류 발생: " + vectorStoreError.getMessage());
+            //     System.err.println("오류 타입: " + vectorStoreError.getClass().getSimpleName());
+            //     System.err.println("오류 상세: " + vectorStoreError.getCause());
+            //     vectorStoreError.printStackTrace();
+            //     System.out.println("VectorStore 오류를 무시하고 직접 GPT API를 호출합니다.");
+            // }
             
             // VectorStore 검색 실패 시 또는 결과가 없을 때 컨텍스트 없이 GPT API 호출
-            try {
-                String response = "답변을 찾지 못했습니다.";
+            // try {
+            //     String response = "답변을 찾지 못했습니다.";
                 
-                // AI 응답 메시지를 ChatHistory에 추가
-                chatHistoryService.addMessageToChatHistory(currentChatId, sender, response, "assistant");
+            //     // AI 응답 메시지를 ChatHistory에 추가
+            //     chatHistoryService.addMessageToChatHistory(currentChatId, sender, response, "assistant");
 
                 
-                return response;
-            } catch (Exception gptError) {
-                System.err.println("GPT API 호출 중 오류 발생: " + gptError.getMessage());
-                gptError.printStackTrace();
-                String errorResponse = "죄송합니다. AI 서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.";
+            //     return response;
+            // } catch (Exception gptError) {
+            //     System.err.println("GPT API 호출 중 오류 발생: " + gptError.getMessage());
+            //     gptError.printStackTrace();
+            //     String errorResponse = "죄송합니다. AI 서비스에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.";
                 
-                // 에러 메시지도 ChatHistory에 추가
-                chatHistoryService.addMessageToChatHistory(currentChatId, sender, errorResponse, "assistant");
+            //     // 에러 메시지도 ChatHistory에 추가
+            //     chatHistoryService.addMessageToChatHistory(currentChatId, sender, errorResponse, "assistant");
                 
-                return errorResponse;
-            }
-            
+            //     return errorResponse;
+            // }
+
+            return response;
         } catch (Exception e) {
             System.err.println("Error in ChatService.getResponse: " + e.getMessage());
             e.printStackTrace();
             return "죄송합니다. 현재 서비스에 문제가 발생했습니다. 잠시 후 다시 시도해주세요.";
+        }
+    }
+
+    public void predict(String userMessage, String responseMessage, Date timestamp, String currentChatId, String sender) {
+        final String prompt = PromptUtil.getPredictPrompt(1, userMessage, responseMessage);
+        String predictedQuestion = gptApi.generatePrediction(prompt).block();
+        try{
+            String answer = getResponse(predictedQuestion, timestamp, currentChatId, sender);
+            if (answer == null || answer.isEmpty() || answer.equals("죄송합니다, 관련 정보를 찾을 수 없습니다.")) {
+                throw new Exception("Answer is null or empty or failed");
+            }
+            System.out.println("");
+            System.out.println("PREDICT");
+            System.out.println("Predicted Question: " + predictedQuestion);
+            System.out.println("Answer: " + answer);
+        } catch (Exception e) {
+            System.err.println("Error in ChatService.predict: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }

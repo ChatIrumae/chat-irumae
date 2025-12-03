@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import java.util.concurrent.CompletableFuture;
 
 import java.util.Date;
 import java.util.List;
@@ -41,8 +42,8 @@ public class ChatController {
         System.out.println("사용자 메시지: " + userMessage);
         System.out.println("발신자: " + sender);
 
-        // 주입받은 ChatService를 사용하여 비즈니스 로직 처리
-        // sender를 userId로 사용
+        System.out.println("");
+        System.out.println("CHAT START");
         String responseMessage = chatService.getResponse(userMessage, timestamp, currentChatId, sender);
 
         long endTime = System.currentTimeMillis();
