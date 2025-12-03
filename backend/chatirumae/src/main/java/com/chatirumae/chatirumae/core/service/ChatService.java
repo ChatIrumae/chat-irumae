@@ -3,7 +3,9 @@ package com.chatirumae.chatirumae.core.service;
 import com.chatirumae.chatirumae.core.interfaces.GptApi;
 import com.chatirumae.chatirumae.core.model.ChatHistory;
 import com.chatirumae.chatirumae.core.model.ChatHistorySummary;
+import com.chatirumae.chatirumae.core.util.PromptUtil;
 import com.chatirumae.chatirumae.infra.ChatGptApi;
+import com.chatirumae.chatirumae.infra.TavilyApi;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
@@ -19,6 +21,7 @@ import java.util.Objects;
 public class ChatService {
     private final VectorStore vectorStore;
     private final GptApi gptApi;
+    private final TavilyApi tavilyApi;
     private final ChatHistoryService chatHistoryService;
     private final RedisQuestionCacheService redisCacheService;
 
@@ -31,11 +34,12 @@ public class ChatService {
     @Value("${chat.vectorstore.similarity-threshold:0.0}")
     private double vectorStoreSimilarityThreshold;
 
-    public ChatService(VectorStore vectorStore, ChatGptApi gptApi,
+    public ChatService(VectorStore vectorStore, ChatGptApi gptApi, TavilyApi tavilyApi,
                        ChatHistoryService chatHistoryService,
                        RedisQuestionCacheService redisCacheService) {
         this.vectorStore = vectorStore;
         this.gptApi = gptApi;
+        this.tavilyApi = tavilyApi;
         this.chatHistoryService = chatHistoryService;
         this.redisCacheService = redisCacheService;
     }
@@ -181,7 +185,50 @@ public class ChatService {
 
             // VectorStore 검색 실패 시 또는 결과가 없을 때 컨텍스트 없이 GPT API 호출
             try {
-                String response = "답변을 찾지 못했습니다.";
+                // Tavily Query 생성
+                System.out.println("QUERY");
+
+                String searchQuery = null;
+                try {
+                    final String searchPrompt = PromptUtil.getTavilyQueryPrompt(userMessage);
+                    searchQuery = gptApi.generateQuery(searchPrompt).block();
+                    System.out.println("Query: " + searchQuery);
+                } catch (Exception gptError) {
+                    System.err.println("GPT API 호출 중 오류 발생: " + gptError.getMessage());
+                    gptError.printStackTrace();
+                }
+                System.out.println("");
+
+
+                // Web Search
+                System.out.println("WEB_SEARCH");
+                String referDocuments = null;
+                try {
+                    referDocuments = tavilyApi.search(searchQuery).block();
+                } catch (Exception tavilyError) {
+                    System.err.println("Tavily API 호출 중 오류 발생: " + tavilyError.getMessage());
+                    tavilyError.printStackTrace();
+                }
+                System.out.println("Tavily API 호출 완료: " + referDocuments.substring(0, 300) + "...");
+                System.out.println("");
+
+                // GPT Response
+                System.out.println("ANSWER");
+                String response = null;
+                try {
+                    final String ragPrompt = PromptUtil.getRagPrompt(referDocuments, userMessage);
+                    response = gptApi.generateQuery(ragPrompt).block();
+                    if (!response.isEmpty() && !response.equals("죄송합니다, 관련 정보를 찾을 수 없습니다.")) {
+                        //TODO GLOBAL CACHE
+                        redisCacheService.cacheQuestionAnswer(searchQuery, response, sender);
+                    }
+                    System.out.println("");
+                    System.out.println("chatbot: " + response);
+                } catch (Exception gptError) {
+                    System.err.println("GPT API 호출 중 오류 발생: " + gptError.getMessage());
+                    gptError.printStackTrace();
+                }
+                System.out.println("");
 
                 // AI 응답 메시지를 ChatHistory에 추가
                 chatHistoryService.addMessageToChatHistory(currentChatId, sender, response, "assistant");
