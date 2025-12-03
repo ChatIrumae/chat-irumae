@@ -25,10 +25,10 @@ public class ChatService {
     @Value("${chromadb.collection.name}")
     private String collectionName;
     
-    @Value("${chat.vectorstore.top-k:5}")
+    @Value("${chat.vectorstore.top-k:15}")
     private int vectorStoreTopK;
     
-    @Value("${chat.vectorstore.similarity-threshold:0.7}")
+    @Value("${chat.vectorstore.similarity-threshold:0.0}")
     private double vectorStoreSimilarityThreshold;
 
     public ChatService(VectorStore vectorStore, ChatGptApi gptApi, 
@@ -96,10 +96,12 @@ public class ChatService {
             try {
                 System.out.println("검색 설정: TopK=" + vectorStoreTopK + ", 유사도 임계값=" + vectorStoreSimilarityThreshold);
 
-                // SearchRequest를 사용하여 명시적으로 검색 조건 설정
-                SearchRequest request = SearchRequest.query(userMessage)
-                        .withTopK(vectorStoreTopK) // 최대 반환할 문서 수
-                        .withSimilarityThreshold(vectorStoreSimilarityThreshold); // 유사도 임계값 (이 값 이상인 문서만 반환)
+                // SearchRequest.builder()를 사용하여 검색 조건 설정 (Spring AI 1.0.0-M5)
+                SearchRequest request = SearchRequest.builder()
+                        .query(userMessage)
+                        .topK(vectorStoreTopK) // 최대 반환할 문서 수
+                        .similarityThreshold(vectorStoreSimilarityThreshold) // 유사도 임계값 (이 값 이상인 문서만 반환)
+                        .build();
 
                 System.out.println("Embedding을 통한 유사도 검색을 시작합니다...");
                 List<Document> similarDocuments = vectorStore.similaritySearch(request);
@@ -125,9 +127,18 @@ public class ChatService {
                     당신은 유용한 AI 챗봇 어시스턴트입니다.
                     주어진 '참고 정보(컨텍스트)'를 바탕으로 사용자의 '질문'에 대해 답변해야 합니다.
                     답변은 반드시 '참고 정보'에 근거해야 하며, 정보에 없는 내용은 답변하지 마세요.
+                    만약 '참고 정보'의 '참고 문서'에서 질문과 연관된 것을 여러개 찾았다면, 이들 각각을 자세하게 설명하세요.
                     '참고 정보'에서 답변을 찾을 수 없다면, "죄송합니다, 관련 정보를 찾을 수 없습니다."라고 답변하세요.
-                    사용자가 어색하지 않게 친근한 말투로 정보를 잘 정리해서 답변하세요.                
+                    사용자가 어색하지 않게 친근한 말투로 정보를 잘 정리해서 답변하세요.
+                    
                     [참고 정보]
+                    강의시간은 1~10 사이의 정수로 표현됩니다. 1은 오전 9시~10시를 의미하며,
+                    2는 오전 10시~11시를 의미합니다. 이런식으로 10까지 1시간씩 증가합니다.
+                    예를 들어, 강의시간이 [5,6,7,8]이라면, 실제 시간은 오후 1시부터 오후 5시까지입니다.
+                    또한 강의실 번호는 정수-정수로 구성됩니다. 앞의 정수는 강의실 건물 번호이며, 뒤의 정소는 강의실의 호수입니다.
+                    아래는 강의실 건물 번호 정보입니다.
+                    14:과학기술관, 37: 100주년기념관, 1:전농관, 10:경농관, 20:법학관, 3: 건설공학관, 15: 21세기관, 39: 시대융합관, 11: 제2공학관, 6:배봉관, 12: 학생회관, 8:자연과학관, 19: 정보기술관, 4: 창공관, 35:음악관
+                    
                     %s
                 
                     [사용자 질문]
